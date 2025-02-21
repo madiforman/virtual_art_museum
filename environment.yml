@@ -1,0 +1,9 @@
+name: vamenv
+channels:
+  - defaults
+ 
+dependencies:
+  - streamlit=1
+  - python=3.12
+  - requests=2
+  - random=1
