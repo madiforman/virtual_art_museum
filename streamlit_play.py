@@ -19,11 +19,11 @@ st.write(search)
 # TODO: search pic df for keyword partial match
 
 xbox = st.sidebar.button('Reset Filters', key='reset')
-if xbox:
-    st.session_state.reset = True
-    st.experimental_rerun()
-else:
-        st.session_state.reset = False
+# if xbox:
+#     st.session_state.reset = True
+#     st.experimental_rerun()
+# else:
+#         st.session_state.reset = False
         
 style_list = ['All', 'Impressionism', 'Modern', 'Renaissance', 'Photography', 'Contemporary'] #replace w df values
 styles = st.sidebar.multiselect("Styles: ", style_list)
