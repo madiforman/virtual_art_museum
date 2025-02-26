@@ -32,19 +32,3 @@ Workflow Walkthrough:
         - They LOVE it so they search 'Van Gogh' in the keyword search and filter the results to Impressionism
         - ** From the Analytics tab, they look at what proportion of the Van Goghs in our database are from European versus American museums
 
-Project Priorities:
-1. UI/Visual
-2. filtering functionality
-3. single image view
-4. metadata (historical stuff etc)
-5. favorites
--------------------------------------------
-6. analytics
-7. personalization
-
-Milestones:
-1. Basic data aquisition
-2. Homepage
-3. Single piece pop up
-4. Favorites page
-5. Analytics
