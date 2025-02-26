@@ -7,14 +7,29 @@ from tabulate import tabulate
 class MetMuseum:
     def __init__(self):
         self.df = pd.read_csv('MetObjects.txt', dtype='str')
-        self.df.set_index('Object Number', inplace=True)
-        self.fields = self.df.columns.tolist()
-        self.deparments = self.get_all_departments()
+        self.fields = self.df.columns
+        self.departments = self.get_all_departments()
+        self.table = self.show_fields()
 
     def show_fields(self):
-        table = tabulate(self.fields, headers='keys', tablefmt='grid')
-        print(table)
+        table = []
+        fields_per_row = 4
+        row = []
+        
+        for i, field in enumerate(self.fields, 1):
+            row.append(field)
+            if i % fields_per_row == 0:
+                table.append(row)
+                row = []
+    
+        # Add any remaining fields
+        if row:
+            while len(row) < fields_per_row:
+                row.append('')
+            table.append(row)
 
+        table = tabulate(table, tablefmt='grid')
+        return table
     def request_image_url(self, object_id):
         response = requests.get(f"https://collectionapi.metmuseum.org/public/collection/v1/objects/{object_id}")
         if self.check_status(response):
@@ -23,9 +38,13 @@ class MetMuseum:
             return None
 
     def get_metadata(self, object_id):
+        row = self.df[self.df['Object Number'] == object_id]
         metadata = {
-            'object_id': object_id,
-            'title': self.df[object_id]['Title']
+            'object_id': row['Object Number'],
+            'title': row['Title'],
+            'artist': row['Artist Display Name'],
+            'department': row['Department'],
+           # 'image_url': self.request_image_url(object_id)
         }
         print(metadata)
         return metadata
@@ -65,8 +84,8 @@ class MetMuseum:
 def main():
     met = MetMuseum()
     print(met.df.head())
-    met.get_metadata('43652')
-    # print(met.get_all_departments())
-    # print(met.get_metadata('43652'))
+    # print(met.df['Object Number'])
+    print(met.table)
+    print(met.get_metadata('43652'))
 if __name__ == "__main__":
     main()
