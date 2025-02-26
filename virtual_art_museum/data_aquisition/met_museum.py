@@ -1,50 +1,59 @@
 import requests
 import random
 from piece import Piece
-
+import pandas as pd
+import os
+from tabulate import tabulate
 class MetMuseum:
-    def __init__(self, url):
-        self.url = url
+    def __init__(self):
+        self.df = pd.read_csv('MetObjects.txt', dtype='str')
+        self.df.set_index('Object Number', inplace=True)
+        self.fields = self.df.columns.tolist()
         self.deparments = self.get_all_departments()
-        self.all_ids = self.get_all_object_ids()
 
-    def create_piece(self, object_id):
-        response = requests.get(f"{self.url}objects/{object_id}")
-        if self.check_status(response):
-            return Piece(object_id, response.json())
+    def show_fields(self):
+        table = tabulate(self.fields, headers='keys', tablefmt='grid')
+        print(table)
 
-    def get_objects_by_query(self, query):
-        response = requests.get(f"{self.url}search?hasImages=true&q={query}")
+    def request_image_url(self, object_id):
+        response = requests.get(f"https://collectionapi.metmuseum.org/public/collection/v1/objects/{object_id}")
         if self.check_status(response):
-            ids = response.json()['objectIDs']
-            pieces = [self.create_piece(id) for id in ids]
+            return response.json()['primaryImage']
         else:
-            return []
+            return None
 
-    def get_N_random_objects(self, N):
-        pieces = [self.create_piece(id) for id in random.sample(self.all_ids, N) if self.create_piece(id) is not None]
-        return pieces
+    def get_metadata(self, object_id):
+        metadata = {
+            'object_id': object_id,
+            'title': self.df[object_id]['Title']
+        }
+        print(metadata)
+        return metadata
+    # def create_piece(self, object_id):
+    #     response = requests.get(f"{self.url}objects/{object_id}")
+    #     if self.check_status(response):
+    #         return Piece(object_id, response.json())
+
+    # def get_objects_by_query(self, query):
+    #     response = requests.get(f"{self.url}search?hasImages=true&q={query}")
+    #     if self.check_status(response):
+    #         ids = response.json()['objectIDs']
+    #         pieces = [self.create_piece(id) for id in ids]
+    #     else:
+    #         return []
+
+    # def get_N_random_objects(self, N):
+    #     pieces = [self.create_piece(id) for id in random.sample(self.all_ids, N) if self.create_piece(id) is not None]
+    #     return pieces
 
     def get_all_object_ids(self): #probably wont use this -> it will take forever to get all the objects
-        response = requests.get(f"{self.url}objects")
-        if self.check_status(response):
-            object_ids = response.json()['objectIDs']
-            return object_ids
-        
+        return self.df['Object Number'].tolist()
+
     def get_all_objects_in_department(self, department_id):
-        response = requests.get(f"{self.url}objects?departmentIds={department_id}")
-        if self.check_status(response):
-            all_objects = list(response.json()['objectIDs'])
-            pieces = [self.create_piece(id) for id in all_objects[:1]]
-            return pieces
+        return self.df[self.df['Department'] == department_id]
 
     def get_all_departments(self):
-        response = requests.get(f"{self.url}departments")
-        dict = {}
-        if self.check_status(response):
-            for item in response.json()['departments']:
-                dict[item['departmentId']] = item['displayName']
-            return dict
+        return self.df['Department'].unique()
 
     def check_status(self, response):
         if response.status_code == 200:
@@ -54,8 +63,10 @@ class MetMuseum:
             return False
 
 def main():
-    met = MetMuseum("https://collectionapi.metmuseum.org/public/collection/v1/")
-    print(met.get_objects_by_query("sunflowers"))
-
+    met = MetMuseum()
+    print(met.df.head())
+    met.get_metadata('43652')
+    # print(met.get_all_departments())
+    # print(met.get_metadata('43652'))
 if __name__ == "__main__":
     main()
