@@ -46,7 +46,6 @@ if 'filters_reset' not in st.session_state:
 
 st.sidebar.header('Advanced filters')
 
-<<<<<<< HEAD:streamlit_play.py
 xbox = st.sidebar.button('Reset Filters')
 if xbox:
     st.session_state.filters_reset = True
@@ -56,14 +55,6 @@ if xbox:
     st.session_state.region = None
 
 search = st.sidebar.text_input("🔍︎ Search by keyword: ", value=st.session_state.get('search', ''))
-=======
-xbox = st.sidebar.button('Reset Filters', key='reset')
-# if xbox:
-#     st.session_state.reset = True
-#     st.experimental_rerun()
-# else:
-#         st.session_state.reset = False
->>>>>>> main:virtual_art_museum/streamlit_play.py
         
 medium_list = data['medium'].unique()
 medium = st.sidebar.multiselect("Mediums: ", medium_list, default=st.session_state.get('medium', 'Oil'))
