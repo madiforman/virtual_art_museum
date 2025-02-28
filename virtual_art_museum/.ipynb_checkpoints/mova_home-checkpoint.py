@@ -22,8 +22,8 @@ data = pd.DataFrame({
               'The Rehearsal Onstage',
               'The Nightingale Sings',  
               'Potted Pansies'],
-    'artist': ['Simon Vouet', 
-               'Claude Monet', 
+    'artist': ['Claude Monet',
+               'Simon Vouet',  
                'Boccaccio Boccaccino', 
                'Camille Corot',
                'Andrea Schiavone',
@@ -33,7 +33,7 @@ data = pd.DataFrame({
                'Henri Fantin-Latour'],
     'year': [1880, 1506, 1843, 1635, 1540, 1897, 1874, 1923, 1883],
     'medium': ['Oil', 'Oil', 'Oil', 'Oil', 'Oil', 'Oil', 'Ink', 'Oil', 'Oil'],
-    'region': ['Europe', 'Europe', 'Europe', 'Europe', 'Europe', 'Europe', 'Europe', 'Europe', 'Europe'],
+    'datasource': ['MET', 'Europeana', 'MET', 'Europeana', 'Europeana', 'MET', 'MET', 'Europeana', 'MET'],
     'image': ['https://collectionapi.metmuseum.org/api/collection/v1/iiif/437111/796133/restricted', 'https://collectionapi.metmuseum.org/api/collection/v1/iiif/435682/789857/main-image', 'https://collectionapi.metmuseum.org/api/collection/v1/iiif/439360/799573/main-image', 'https://collectionapi.metmuseum.org/api/collection/v1/iiif/890822/2151253/restricted', 'https://collectionapi.metmuseum.org/api/collection/v1/iiif/437638/801063/main-image', 'https://collectionapi.metmuseum.org/api/collection/v1/iiif/437966/796372/main-image',  'https://collectionapi.metmuseum.org/api/collection/v1/iiif/436156/795921/main-image', 'https://collectionapi.metmuseum.org/api/collection/v1/iiif/437198/2056636/restricted',  'https://collectionapi.metmuseum.org/api/collection/v1/iiif/629928/1350639/main-image']
 }) 
 
@@ -47,8 +47,8 @@ if 'medium' not in st.session_state:
     st.session_state.medium = []
 if 'years' not in st.session_state:
     st.session_state.years = (min(data['year']), max(data['year']))
-if 'region' not in st.session_state:
-    st.session_state.region = None
+if 'datasource' not in st.session_state:
+    st.session_state.datasource = None
 
 st.sidebar.header('Advanced filters')
 
@@ -58,7 +58,7 @@ if reset_button:
     st.session_state.search = ''
     st.session_state.medium = []
     st.session_state.years = (min(data['year']), max(data['year']))
-    st.session_state.region = None
+    st.session_state.datasource = None
     st.rerun()
 
 search = st.sidebar.text_input("🔍︎ Search by keyword: ", value=st.session_state.search)
@@ -71,12 +71,12 @@ years = st.sidebar.slider('Time Period: ',
                           max_value=max(data['year']),
                           value=st.session_state.years)
 
-region = st.sidebar.radio('Region: ', ['United States', 'Europe'], index=None if st.session_state.get('region', None) is None else ['United States', 'Europe'].index(st.session_state.region))
+datasource = st.sidebar.radio('Datasource: ', ['MET', 'Europeana'], index=None if st.session_state.get('datasource', None) is None else ['MET', 'Europeana'].index(st.session_state.datasource))
 
 st.session_state.search = search
 st.session_state.medium = medium
 st.session_state.years = years
-st.session_state.region = region
+st.session_state.datasource = datasource
 
 # Header configuation
 col1, col2, col3 = st.columns([20,1,1])
@@ -85,35 +85,48 @@ with col1:
     st.image("https://github.com/madiforman/virtual_art_museum/blob/main/images/MoVA_logo.png?raw=true", width=400)
 
 with col2:
-    st.page_link("https://www.moma.org", label='##', icon='✨', help='Favorites')
+    st.page_link("https://catgdp.streamlit.app/", label='##', icon='✨', help='Favorites')
 
 with col3:
     if(st.button("📊")):
         with st.spinner():
-            time.sleep(20)
             st.write('Done')
     
+st.markdown("#")  
 st.markdown("#")
-st.markdown("#")   
+
+def image_processing_europeana(data):
+    for row in data:
+        if type(data.loc[row, 'year']) != int:
+            year = data.loc[row, 'year']
+
+def image_processing_met(data):
+    ## do something
+    return
+    
+def blend_datasources(met_data, europeana_data):
+    # randomize the datasources for the display
+    return
 
 # Filtered data
-filtered = data.copy()
+def filter_data(data):
+    if search:
+        mask = False
+        for column in data.columns:
+            # create a boolean mask for which data points contain search parameter
+            mask = mask | data[column].astype(str).str.contains(search, case=False, na=False)
+        data = data[mask]
 
-if search:
-    mask = False
-    for column in filtered.columns:
-        mask = mask | filtered[column].astype(str).str.contains(search, case=False, na=False)
-    filtered = filtered[mask]
+    if medium:
+        data = data[data['medium'].isin(medium)]
 
-if medium:
-    filtered = filtered[filtered['medium'].isin(medium)]
+    data = data[(data['year'] >= years[0]) & (data['year'] <= years[1])]
 
-filtered = filtered[(filtered['year'] >= years[0]) & (filtered['year'] <= years[1])]
-
-if region == 'United States':
-    filtered = filtered[filtered['region'] == 'United States']
-elif region == 'Europe':
-    filtered = filtered[filtered['region'] == 'Europe']
+    if datasource == 'MET':
+        data = data[data['datasource'] == 'MET']
+    elif datasource == 'Europeana':
+        data = data[data['datasource'] == 'Europeana']
+    
 
 # Printing images
 def image_gallery(data):
