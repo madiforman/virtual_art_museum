@@ -2,8 +2,6 @@ Technology Review
 
 **Markdown Section 1: Background & Use Case**
 
-Section 1: Background & Use Case  
-
 ● What’s our application?  
 	A virtual art museum 
 
@@ -23,8 +21,7 @@ Use Cases:
 Streamlit is targeted towards data science projects, allowing you to display, manipulate, and interact with large amounts of data gracefully. It is reputable and widely used, providing seamless integration with our data. 
 
 **Markdown Section 2: Python Package Choices**
-
-Markdown Section 2: Python Package Choices  
+ 
 ● 2-3 Python libraries that potentially address our use case:  
 - Flask  
 - Streamlit  
