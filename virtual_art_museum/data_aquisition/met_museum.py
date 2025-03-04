@@ -1,10 +1,10 @@
 import os # standard library
-import requests
 import random
 import time
 import asyncio
 import aiohttp
 
+import requests
 import pandas as pd # third party
 from tabulate import tabulate
 from tqdm import tqdm
@@ -51,11 +51,11 @@ class MetMuseum: # total objects: 484,956
 
     async def _bound_fetch(self, semaphore: asyncio.Semaphore, session: aiohttp.ClientSession, url: str) -> str | bool:
         async with semaphore:
-            return await self.async_fetch_img(session, url)
+            return await self._async_fetch_img(session, url)
 
     async def _run(self):
         all_ids = self.df['Object ID'].tolist()
-        tasks, valid_ids = [], []
+        tasks = []
         max_requests = 1000
         semaphore = asyncio.Semaphore(max_requests)
         url = "https://collectionapi.metmuseum.org/public/collection/v1/objects"
@@ -64,16 +64,20 @@ class MetMuseum: # total objects: 484,956
         async with aiohttp.ClientSession() as session:
             for obj_id in all_ids:
                 request_url = f"{url}/{obj_id}"
-                task = asyncio.ensure_future(self.bound_fetch(semaphore, session, request_url))
+                task = asyncio.ensure_future(self._bound_fetch(semaphore, session, request_url))
                 tasks.append((obj_id, task))
-
             print(f"All {len(tasks)} tasks created. Waiting for responses...")
-            # tracking task completion
-            responses = [await f for f in tqdm(asyncio.as_completed([t for _, t in tasks]), total=len(tasks))]
-            valid_ids = [obj_id for obj_id, task in tasks if task.result() != False]
-        
+
+            for obj_id, task in tqdm(tasks, total=len(tasks)):
+                await task
+            image_url_dict = {obj_id: task.result() for obj_id, task in tasks if task.result() != False}
+            valid_ids = list(image_url_dict.keys())
         print(f"Found {len(valid_ids)} objects with valid images ({len(valid_ids)/len(all_ids)*100:.1f}%)")
-        filtered_df = self.df[self.df['Object ID'].isin(valid_ids)]
+
+        filtered_df = self.df[self.df['Object ID'].isin(valid_ids)].copy()
+        filtered_df['image_url'] = filtered_df['Object ID'].map(image_url_dict)
+        print(f"Original dataframe shape: {self.df.shape}")
+        print(f"Filtered dataframe shape: {filtered_df.shape}")
         return filtered_df
         
     def get_n_random_objs(self, n):
@@ -83,12 +87,13 @@ class MetMuseum: # total objects: 484,956
         Returns: list of metadata for the objects
         """
         objs = self.df.sample(n)
-        data = [self.get_metadata(id) for id in objs['Object ID']]
-        return data
+        # data = [self.get_metadata(id) for id in objs['Object ID']]
+        return objs
 
     def get_metadata(self, object_id):
         """
-        Get metadata for a given object id
+        Get metadata for a given object id; this was written before saving the image urls to a csv file.
+        May become deprecated in the future. (unnecessary if we're not making api calls)
         Params: object_id - str id of the object to get metadata for
         Returns: metadata for the object
         """
@@ -110,19 +115,10 @@ class MetMuseum: # total objects: 484,956
         else: 
             raise ValueError(f"Object ID {object_id} has no image")
 
-    def get_all_objects_in_department(self, department_id):
-        """ 
-        Returns all object ids for objects in a given department
-        Params: 
-        """
-        objs = self.df[self.df['Department'] == department_id]
-        data = [self.get_metadata(obj['Object ID']) for _, obj in objs.iterrows()]
-        return data
-
 def main():
-    met = MetMuseum('MetObjects_filtered.csv')
-    data = met.get_n_random_objs(3)
-    print(data)
+    met = MetMuseum('MetObjects.txt')
+    final_df = asyncio.run(met._run())
+    final_df.to_csv('MetObjects_final.csv', index=False)
 
 if __name__ == "__main__":
     main()
