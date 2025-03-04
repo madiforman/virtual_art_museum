@@ -76,7 +76,7 @@ class MetMuseum: # total objects: 484,956
         filtered_df = self.df[self.df['Object ID'].isin(valid_ids)]
         return filtered_df
         
-    def get_n_random_objects(self, n):
+    def get_n_random_objs(self, n):
         """
         Get n random objects from dataframe
         Params: n - int number of objects to get
@@ -93,7 +93,7 @@ class MetMuseum: # total objects: 484,956
         Returns: metadata for the object
         """
         row = self.df.loc[self.df['Object ID'] == object_id].to_dict(orient='records')
-        url = self.request_image_url(object_id)
+        url = self.fetch_img(object_id)
         if url:
             metadata = {
                 'object_id': row[0]['Object ID'],
@@ -103,6 +103,7 @@ class MetMuseum: # total objects: 484,956
                 'medium': row[0]['Medium'],
                 'artist bio': row[0]['Artist Display Bio'],
                 'region': row[0]['Region'],
+                'date': row[0]['Object Date'],
                 'image_url': url
             }
             return metadata
@@ -118,45 +119,14 @@ class MetMuseum: # total objects: 484,956
         data = [self.get_metadata(obj['Object ID']) for _, obj in objs.iterrows()]
         return data
 
-    def get_all_departments(self):
-        return self.df['Department'].unique()
-
-
 def main():
-    met = MetMuseum('MetObjects_filtered_II.csv')
-    print(met.df.columns)
-    # final_df = asyncio.run(met.run())
-    # final_df.to_csv('MetObjects_filtered_II.csv', index=False)
-    # print(f"Original shape: {met.df.shape}")
-    # print(f"Filtered shape: {final_df.shape}")
-
+    met = MetMuseum('MetObjects_filtered.csv')
+    data = met.get_n_random_objs(3)
+    print(data)
 
 if __name__ == "__main__":
     main()
 
-
-
-# class MetMuseum: # total objects: 484,956
-#     """
-#     Initialize the MetMuseum class
-#     Params: file_path - str path to the csv file containing the metadata
-#     """
-
-#     def __init__(self, file_path):
-#         self.df = pd.read_csv(file_path, dtype='str') # read in csv file
-#         self.fields = self.df.columns # get all fields in the dataframe
-        
-#     def show_fields(self):
-#         """
-#         Print all fields in the dataframe
-#         """
-#         fields_list = list(self.df.columns)
-#         table = []
-#         for i in range(0, len(fields_list), 6):
-#             fields = fields_list[i:i+6]
-#             table.append(fields)
-#         print(tabulate(table, tablefmt='grid'))
-#         return None
 
 #     async def request_img_async(self, session:aiohttp.ClientSession, object_id:int) -> str | bool:
 #         url = f"https://collectionapi.metmuseum.org/public/collection/v1/objects/{object_id}"
@@ -189,28 +159,6 @@ if __name__ == "__main__":
 
 #         return self.df[self.df['Object ID'].isin(valid_ids)] # filter valid ids
 
-#     async def run(self):
-#         total_requests = len(self.df)
-#         url = f"https://collectionapi.metmuseum.org/public/collection/v1/objects/"
-#         all_ids = self.df['Object ID'].tolist()
-
-#         tasks = []
-#         max_requests = 1000
-#         semaphore = asyncio.Semaphore(1000)
-
-#         # create client session that will ensure 1 connection per request
-#         async with aiohttp.ClientSession() as session:
-#             for obj_id in all_ids:
-#                 task = asyncio.ensure_future(self.request_img_async(semaphore, obj_id))
-#                 tasks.append(task)
-
-#         # run all tasks concurrently
-#         results = await asyncio.gather(*tasks, return_exceptions=True)
-#         await results
-        
-
-
-
 #     async def _async_remove_objects(self, batch_size=1000, concurrent_requests=50) -> pd.DataFrame:
 #         all_ids = self.df['Object ID'].tolist()
 #         final_df = pd.DataFrame(columns=self.fields)
@@ -238,59 +186,3 @@ if __name__ == "__main__":
 #         print(f"Final num objects: {len(final_df)}")
         
 #         return final_df
-
-
-
-#         def get_n_random_objects(self, n):
-#             """
-#             Get n random objects from dataframe
-#             Params: n - int number of objects to get
-#             Returns: list of metadata for the objects
-#             """
-#             objs = self.df.sample(n)
-#             data = [self.get_metadata(id) for id in objs['Object ID']]
-#             return data
-
-#         def get_metadata(self, object_id):
-#             """
-#             Get metadata for a given object id
-#             Params: object_id - str id of the object to get metadata for
-#             Returns: metadata for the object
-#             """
-#             row = self.df.loc[self.df['Object ID'] == object_id].to_dict(orient='records')
-#             url = self.request_image_url(object_id)
-#             if url:
-#                 metadata = {
-#                     'object_id': row[0]['Object ID'],
-#                     'title': row[0]['Title'],
-#                     'artist': row[0]['Artist Display Name'],
-#                     'department': row[0]['Department'],
-#                     'medium': row[0]['Medium'],
-#                     'artist bio': row[0]['Artist Display Bio'],
-#                     'region': row[0]['Region'],
-#                     'image_url': url
-#                 }
-#                 return metadata
-#             else: 
-#                 raise ValueError(f"Object ID {object_id} has no image")
-
-#     def get_all_objects_in_department(self, department_id):
-#         """ 
-#         Returns all object ids for objects in a given department
-#         Params: 
-#         """
-#         objs = self.df[self.df['Department'] == department_id]
-#         data = [self.get_metadata(obj['Object ID']) for _, obj in objs.iterrows()]
-#         return data
-
-#     def get_all_departments(self):
-#         return self.df['Department'].unique()
-
-# def main():
-#     met = MetMuseum('MetObjects_unfiltered.txt')
-#     final_df = asyncio.run(met.async_remove_objects()) # run async function with asyncio.run
-#     final_df.to_csv('MetObjects_filtered.csv', index=False)
-
-# if __name__ == "__main__":
-#     main()
-
