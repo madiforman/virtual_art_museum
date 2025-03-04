@@ -1,0 +1,7 @@
+name: vamenv
+channels:
+  - defaults
+ 
+dependencies:
+  - streamlit=1
+  - python=3.12
