@@ -11,6 +11,17 @@ import time
 
 import streamlit as st
 import pandas as pd
+<<<<<<< HEAD
+=======
+import random
+import math
+import os
+
+from data_aquisition.met_museum import MetMuseum
+
+met = MetMuseum('data_aquisition/MetObjects_filtered.csv')
+data = met.get_n_random_objs(3)
+>>>>>>> 06a6750fd2d805f04eb983ee0a85cfec07ce16e7
 
 def 
 # Page and Sidebar configuation

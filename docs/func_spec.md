@@ -27,3 +27,13 @@ Data Sources:
 Use Cases:
     1. Building a list of desired art
     2. learning more about a an art piece
+
+
+Milestones:
+1. Basic data aquisition
+2. Homepage
+3. Single piece pop up
+4. Favorites page
+5. Analytics
+6. Personalization
+
