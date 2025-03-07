@@ -11,21 +11,38 @@ import time
 
 import streamlit as st
 import pandas as pd
+import numpy as np
 
 import random
 import math
 import os
 
-from data_aquisition.met_museum import MetMuseum
-
+# must specify file path before MetMuseum import
 current_dir = os.path.dirname(os.path.abspath(__file__))
+
+# pylint: disable= import-error, 
+from data_aquisition.met_museum import MetMuseum
 
 met_path = os.path.join(current_dir, 'data_aquisition', 'MetObjects_final.csv')
 
 met = MetMuseum(met_path)
-data = met.get_n_random_objs(9)
+data = met.get_n_random_objs(18)
+
+# CULTURES = ['American', 'British', 'Bohemian', 'Canadian', 'Chinese', 'Dutch', 
+#    'European', 'French', 'Finnish', 'Flemish', 'German', - madi will work on this
 
 def image_processing_met(data):
+    '''
+    Processes MET dataset to make it readable for later functions.
+
+    Processing steps:
+        - Filter out irrelevant columns
+        - Change 'Repository' values to 'MET'
+        - Rename columns to be more readable
+        - Replace None values with [column name] unknown
+        - Split delimited values into a list
+        - Create a century column based on the years?
+    '''
     data = data[['Object Number', 'Title', 'Culture', 'Artist Display Name', 
                  'Artist Display Bio', 'Object Begin Date', 'Medium', 'Dimensions',
                 'Repository', 'Tags', 'image_url']]
@@ -38,7 +55,8 @@ def image_processing_met(data):
                            'Object Begin Date' : 'Year'}, inplace=True)
 
     for col in data.columns:
-        if not col == 'Tags':
+            
+        if not col == 'Tags' or col == 'Culture':
             data[col] = data[col].apply(
                 lambda x: f"{col} unknown" if pd.isna(x) or x == ' ' else x
             )
@@ -46,8 +64,8 @@ def image_processing_met(data):
         if isinstance(data[col].iloc[0], str) and '|' in data[col].iloc[0]:
             data[col] = data[col].apply(
                 lambda x: [item.strip() for item in x.split('|')] if isinstance(x, str) else []
-            )            
-        
+            )    
+            
     return data
 
 
@@ -102,10 +120,10 @@ def sidebar_setup():
         st.session_state.filters_reset = False
     if 'search' not in st.session_state:
         st.session_state.search = ''
-    if 'medium' not in st.session_state:
-        st.session_state.medium = []
+    if 'culture' not in st.session_state:
+        st.session_state.culture = []
     if 'years' not in st.session_state:
-        st.session_state.years = (int(min(data['Year'])), int(max(data['Year'])))
+        st.session_state.years = (min(data['Year'].astype(int)), max(data['Year'].astype(int)))
     if 'datasource' not in st.session_state:
         st.session_state.datasource = None
 
@@ -116,20 +134,20 @@ def sidebar_setup():
     if reset_button:
         st.session_state.filters_reset = True
         st.session_state.search = ''
-        st.session_state.medium = []
-        st.session_state.years = (int(min(data['Year'])), int(max(data['Year'])))
+        st.session_state.culture = []
+        st.session_state.years = (min(data['Year'].astype(int)), max(data['Year'].astype(int)))
         st.session_state.datasource = None
         st.rerun()
 
     search = st.sidebar.text_input("🔍︎ Search by keyword: ", value=st.session_state.search)
 
-    medium_list = ['idk man', 'just trying my best', 'hope this works']
-    medium = st.sidebar.multiselect("Mediums: ", medium_list, 
-                                    default=st.session_state.medium)
+    culture_list = data["Culture"].unique().tolist()
+    culture = st.sidebar.multiselect("Culture: ", culture_list, 
+                                    default=st.session_state.culture)
 
     years = st.sidebar.slider('Time Period: ', 
-                              min_value = int(min(data['Year'])),
-                              max_value = int(max(data['Year'])),
+                              min_value = min(data['Year'].astype(int)),
+                              max_value = max(data['Year'].astype(int)),
                               value=st.session_state.years)
 
     datasource = st.sidebar.radio('Datasource: ', ['MET', 'Europeana'], 
@@ -149,10 +167,10 @@ def filter_data(data):
                                                                 case=False, na=False)
         data = data[mask]
 
-    if st.session_state.medium:
-        data = data[data['medium'].isin(st.session_state.medium)]
+    if st.session_state.culture:
+        data = data[data['Culture'].isin(st.session_state.culture)]
 
-    data = data[(data['year'] >= st.session_state.years[0]) & (data['year'] <= st.session_state.years[1])]
+    data = data[(data['Year'] >= st.session_state.years[0]) & (data['Year'] <= st.session_state.years[1])]
 
     if st.session_state.datasource == 'MET':
         data = data[data['datasource'] == 'MET']
@@ -191,6 +209,5 @@ def image_gallery(data):
 
 data = image_processing_met(data)
 page_setup()
-# sidebar_setup() this little b*tch is having an issue with the years
-st.write(data)
+sidebar_setup()
 image_gallery(data)
