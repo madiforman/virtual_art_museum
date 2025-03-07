@@ -4,10 +4,7 @@ import random
 import math
 import os
 
-from data_aquisition.met_museum import MetMuseum
 
-met = MetMuseum('data_aquisition/MetObjects_filtered.csv')
-data = met.get_n_random_objs(3)
 
 # Page and Sidebar configuation
 st.set_page_config(
