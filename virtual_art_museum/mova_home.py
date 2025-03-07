@@ -17,14 +17,12 @@ import random
 import math
 import os
 
-# must specify file path before MetMuseum import
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 # pylint: disable= import-error, 
 from data_aquisition.met_museum import MetMuseum
 
 met_path = os.path.join(current_dir, 'data_aquisition', 'MetObjects_final.csv')
-
 met = MetMuseum(met_path)
 data = met.get_n_random_objs(18)
 
