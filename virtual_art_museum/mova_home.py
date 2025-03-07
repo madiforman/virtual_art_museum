@@ -16,12 +16,10 @@ import random
 import math
 import os
 
-from data_aquisition.met_museum import MetMuseum
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 met_path = os.path.join(current_dir, 'data_aquisition', 'MetObjects_final.csv')
-
 met = MetMuseum(met_path)
 data = met.get_n_random_objs(9)
 
