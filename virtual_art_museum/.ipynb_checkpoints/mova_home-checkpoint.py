@@ -12,17 +12,28 @@ import time
 import streamlit as st
 import pandas as pd
 import numpy as np
+
 from math import ceil
+
 
 import random
 import math
 import os
+
 import re
+
+
+
+# must specify file path before MetMuseum import
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 # pylint: disable= import-error, 
 from data_aquisition.met_museum import MetMuseum
+
+
+met_path = os.path.join(current_dir, 'data_aquisition', 'MetObjects_final.csv')
+
 
 met_path = os.path.join(current_dir, 'data_aquisition', 'MetObjects_final.csv')
 met = MetMuseum(met_path)
@@ -62,6 +73,7 @@ def image_processing_met(data):
         return cell
 
     for col in data.columns:
+
         data[col] = data[col].apply(split_delimited)
 
     def clean_culture(culture):
