@@ -6,7 +6,6 @@ import aiohttp
 
 import requests
 import pandas as pd # third party
-from tabulate import tabulate
 from tqdm import tqdm
 import numpy as np
 
@@ -116,9 +115,9 @@ class MetMuseum: # total objects: 484,956
             raise ValueError(f"Object ID {object_id} has no image")
 
 def main():
-    met = MetMuseum('MetObjects.txt')
-    final_df = asyncio.run(met._run())
-    final_df.to_csv('MetObjects_final.csv', index=False)
+    met = MetMuseum('MetObjects_final.txt')
+    print(met.df['region'].unique())
+
 
 if __name__ == "__main__":
     main()
