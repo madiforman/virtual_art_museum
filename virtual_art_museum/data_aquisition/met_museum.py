@@ -1,12 +1,22 @@
+"""
+This module
+
+References:
+    https://realpython.com/python-concurrency/
+    https://pawelmhm.github.io/asyncio/python/aiohttp/2016/04/22/asyncio-aiohttp.html
+
+"""
 import os # standard library
 import random
 import time
 import asyncio
 import aiohttp
+from collections import Counter
 
 import requests
 import pandas as pd # third party
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 import numpy as np
 
 # if local files needed put here
@@ -114,70 +124,37 @@ class MetMuseum: # total objects: 484,956
         else: 
             raise ValueError(f"Object ID {object_id} has no image")
 
-def main():
-    met = MetMuseum('MetObjects_final.txt')
-    print(met.df['region'].unique())
+    # def clean_cultures(self):
+    #     # Get culture counts, excluding null values
+    #     culture_counts = self.df['Culture'].value_counts()
+    #     top_cultures = culture_counts.head(20)
 
+    #     plt.figure(figsize=(15, 8))
+    #     bars = plt.bar(range(len(top_cultures)), top_cultures.values)
+    #     plt.xticks(range(len(top_cultures)), top_cultures.index, rotation=45, ha='right')
+        
+    #     for bar in bars:
+    #         height = bar.get_height()
+    #         plt.text(bar.get_x() + bar.get_width()/2., height,
+    #                 f'{int(height):,}',
+    #                 ha='center', va='bottom')
+            
+    #     plt.title('20 Most Common Cultures in Met Museum Collection')
+    #     plt.xlabel('Culture')
+    #     plt.ylabel('Number of Objects')
+    #     plt.tight_layout()
+    #     plt.figure(figsize=(10, 6))
+    #     plt.hist(culture_counts)
+    #     plt.show()
+        
+def main():
+    met = MetMuseum('MetObjects_final.csv')
+    # print(met.df.columns)
+    # cultures = met.df['Culture'].unique()
+    # for c in cultures:
+    #     print(c)
+
+    #met.clean_cultures()
 
 if __name__ == "__main__":
     main()
-
-
-#     async def request_img_async(self, session:aiohttp.ClientSession, object_id:int) -> str | bool:
-#         url = f"https://collectionapi.metmuseum.org/public/collection/v1/objects/{object_id}"
-#         try:
-#             async with session.get(url) as response:
-#                 if response.status == 200:  # successful request
-#                     data = await response.json()
-#                     if 'primaryImage' in data and data['primaryImage']:  # primary image is main display image -> check if it exists
-#                         return data['primaryImage']
-#         except Exception as e:
-#             return False  # Silently handle errors during batch processing
-#         return False
-
-
-#     async def _filter_objects_async(self, session:aiohttp.ClientSession, object_ids:list) -> pd.DataFrame:
-#         valid_ids = []
-#         tasks = []
-#         for obj_id in object_ids: # each object id is a task
-#             task = self.request_image_async(session, obj_id)
-#             tasks.append((obj_id, task))
-        
-#         processing_size = 100    # this is how many API requests are made concurrently before awaiting their results
-#         for i in range(0, len(tasks), processing_size):
-#             chunk = tasks[i:i+processing_size] # chunk up the tasks
-            
-#             for obj_id, task in chunk: # wait for batch to complete
-#                 image_url = await task
-#                 if image_url != False:  # If image exists
-#                     valid_ids.append(obj_id)
-
-#         return self.df[self.df['Object ID'].isin(valid_ids)] # filter valid ids
-
-#     async def _async_remove_objects(self, batch_size=1000, concurrent_requests=50) -> pd.DataFrame:
-#         all_ids = self.df['Object ID'].tolist()
-#         final_df = pd.DataFrame(columns=self.fields)
-#         start = time.time()
-        
-#         # Process in batches to manage memory
-#         connector = aiohttp.TCPConnector(limit=concurrent_requests)
-
-#         async with aiohttp.ClientSession(connector=connector) as session:
-#             for i in range(0, len(all_ids), batch_size):
-#                 batch_ids = all_ids[i:i+batch_size]
-#                 print(f"Processing batch {i//batch_size + 1}/{(len(all_ids) + batch_size - 1)//batch_size}")
-                
-#                 batch_df = await self._filter_objects_async(batch_ids, session)
-#                 final_df = pd.concat([final_df, batch_df], ignore_index=True)
-                
-#                 # Report progress
-#                 elapsed = time.time() - start
-#                 objects_processed = min(i + batch_size, len(all_ids))
-#                 percent_complete = objects_processed / len(all_ids) * 100
-
-#         end = time.time()
-#         print(f"Time taken: {end-start:.1f} seconds")
-#         print(f"Final dataframe shape: {final_df.shape}")
-#         print(f"Final num objects: {len(final_df)}")
-        
-#         return final_df
