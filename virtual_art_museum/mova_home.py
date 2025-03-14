@@ -11,19 +11,39 @@ import time
 
 import streamlit as st
 import pandas as pd
+import numpy as np
+
+from math import ceil
 
 import random
 import math
 import os
-
+import re
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
+# pylint: disable= import-error, 
+from data_aquisition.met_museum import MetMuseum
+
 met_path = os.path.join(current_dir, 'data_aquisition', 'MetObjects_final.csv')
 met = MetMuseum(met_path)
-data = met.get_n_random_objs(9)
+data = met.get_n_random_objs(18)
+
+# CULTURES = ['American', 'British', 'Bohemian', 'Canadian', 'Chinese', 'Dutch', 
+#    'European', 'French', 'Finnish', 'Flemish', 'German', - madi will work on this
 
 def image_processing_met(data):
+    '''
+    Processes MET dataset to make it readable for later functions.
+
+    Processing steps:
+        - Filter out irrelevant columns
+        - Change 'Repository' values to 'MET'
+        - Rename columns to be more readable
+        - Replace None values with [column name] unknown
+        - Split delimited values into a list
+        - Create a century column based on the years?
+    '''
     data = data[['Object Number', 'Title', 'Culture', 'Artist Display Name', 
                  'Artist Display Bio', 'Object Begin Date', 'Medium', 'Dimensions',
                 'Repository', 'Tags', 'image_url']]
@@ -35,17 +55,71 @@ def image_processing_met(data):
                            'Artist Display Bio' : 'Artist biographic information',
                            'Object Begin Date' : 'Year'}, inplace=True)
 
+    def split_delimited(cell):
+        ''' Splits delimited cells into lists '''
+        if isinstance(cell, str) and '|' in cell:
+            items = [item.strip() for item in cell.split('|')]
+            return ", ".join(items)
+        return cell
+
     for col in data.columns:
-        if not col == 'Tags':
-            data[col] = data[col].apply(
-                lambda x: f"{col} unknown" if pd.isna(x) or x == ' ' else x
-            )
+        data[col] = data[col].apply(split_delimited)
+
+    def clean_culture(culture):
+        ''' Gets rid of possibly / probably and splits at the comma '''
+        if not isinstance(culture, str):
+            return culture
             
-        if isinstance(data[col].iloc[0], str) and '|' in data[col].iloc[0]:
-            data[col] = data[col].apply(
-                lambda x: [item.strip() for item in x.split('|')] if isinstance(x, str) else []
-            )            
-        
+        cleaned = re.sub(r'\b(?:probably|possibly)\b\s*', '', culture, flags=re.IGNORECASE)
+        cleaned = cleaned.split(',')[0].strip()
+        return cleaned
+
+    data['Culture'] = data['Culture'].apply(clean_culture)
+
+    def replace_empty(df):
+        ''' Replaces unknown values with a string for the pop-up '''
+        for col in df.columns:
+            is_empty = (
+                df[col].isna() |
+                (df[col] == None) |
+                (df[col].astype(str).str.strip() == ''))
+
+            df.loc[is_empty, col] = f"{col} unknown"
+
+        return df
+
+    data = replace_empty(data)
+
+    def clean_title(title):
+        ''' Makes a cleaner title to print '''
+        if not isinstance(title, str):
+            return title
+
+        cleaned = re.sub(r'\([^)]*\)', '', title)
+        cleaned = re.sub(r'^\W+|\W+$', '', cleaned)
+        return cleaned.strip()
+
+    data['caption_title'] = data['Title'].apply(clean_title)
+
+    def century_mapping(year):
+        ''' Creates a century value for applicable years '''
+        if isinstance(year, int):
+            century = ceil(abs(year) / 100)
+            if year < 0:
+                return f"{century}th century BC"
+            else:
+                if century == 1:
+                    return f"{century}st century AD"
+                elif century == 2:
+                    return f"{century}nd century AD"
+                elif century == 3:
+                    return f"{century}rd century AD"
+                else:
+                    return f"{century}th century AD"
+        return year
+
+    data['Century'] = data['Year'].apply(century_mapping)
+            
     return data
 
 
@@ -100,10 +174,10 @@ def sidebar_setup():
         st.session_state.filters_reset = False
     if 'search' not in st.session_state:
         st.session_state.search = ''
-    if 'medium' not in st.session_state:
-        st.session_state.medium = []
+    if 'culture' not in st.session_state:
+        st.session_state.culture = []
     if 'years' not in st.session_state:
-        st.session_state.years = (int(min(data['Year'])), int(max(data['Year'])))
+        st.session_state.years = (min(data['Year'].astype(int)), max(data['Year'].astype(int)))
     if 'datasource' not in st.session_state:
         st.session_state.datasource = None
 
@@ -114,20 +188,20 @@ def sidebar_setup():
     if reset_button:
         st.session_state.filters_reset = True
         st.session_state.search = ''
-        st.session_state.medium = []
-        st.session_state.years = (int(min(data['Year'])), int(max(data['Year'])))
+        st.session_state.culture = []
+        st.session_state.years = (min(data['Year'].astype(int)), max(data['Year'].astype(int)))
         st.session_state.datasource = None
         st.rerun()
 
     search = st.sidebar.text_input("🔍︎ Search by keyword: ", value=st.session_state.search)
 
-    medium_list = ['idk man', 'just trying my best', 'hope this works']
-    medium = st.sidebar.multiselect("Mediums: ", medium_list, 
-                                    default=st.session_state.medium)
+    culture_list = data["Culture"].unique().tolist()
+    culture = st.sidebar.multiselect("Culture: ", culture_list, 
+                                    default=st.session_state.culture)
 
     years = st.sidebar.slider('Time Period: ', 
-                              min_value = int(min(data['Year'])),
-                              max_value = int(max(data['Year'])),
+                              min_value = min(data['Year'].astype(int)),
+                              max_value = max(data['Year'].astype(int)),
                               value=st.session_state.years)
 
     datasource = st.sidebar.radio('Datasource: ', ['MET', 'Europeana'], 
@@ -147,10 +221,10 @@ def filter_data(data):
                                                                 case=False, na=False)
         data = data[mask]
 
-    if st.session_state.medium:
-        data = data[data['medium'].isin(st.session_state.medium)]
+    if st.session_state.culture:
+        data = data[data['Culture'].isin(st.session_state.culture)]
 
-    data = data[(data['year'] >= st.session_state.years[0]) & (data['year'] <= st.session_state.years[1])]
+    data = data[(data['Year'] >= st.session_state.years[0]) & (data['Year'] <= st.session_state.years[1])]
 
     if st.session_state.datasource == 'MET':
         data = data[data['datasource'] == 'MET']
@@ -174,8 +248,8 @@ def image_gallery(data):
         for pic in pics:
             with pic:
                 #splitting in case we want to add more to the caption
-                caption = data.iloc[i, 1]
-                st.image(data.iloc[i,-1], caption=caption)
+                caption = data.iloc[i, -2]
+                st.image(data.iloc[i,-3], caption=caption)
                 i += 1
 
     leftovers = n % 3
@@ -183,12 +257,12 @@ def image_gallery(data):
         lastrow = st.columns(leftovers, gap='medium', vertical_alignment='center')
         for j in range(leftovers):
             with lastrow[j]:
-                caption = data.iloc[i,1]
-                st.image(data.iloc[i,-1], caption=caption)
+                caption = data.iloc[i,-2]
+                st.image(data.iloc[i,-3], caption=caption)
                 i += 1
 
 data = image_processing_met(data)
 page_setup()
-# sidebar_setup() this little b*tch is having an issue with the years
-st.write(data)
+sidebar_setup()
+# st.write(data) uncomment if you want to see how data is being stored :)
 image_gallery(data)
