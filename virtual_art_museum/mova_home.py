@@ -52,7 +52,8 @@ def image_processing_met(data):
 
     data.rename(columns = {'Artist Display Name' : 'Artist',
                            'Artist Display Bio' : 'Artist biographic information',
-                           'Object Begin Date' : 'Year'}, inplace=True)
+                           'Object Begin Date' : 'Year',
+                           'Repository' : 'datasource'}, inplace=True)
 
     def split_delimited(cell):
         ''' Splits delimited cells into lists '''
@@ -105,7 +106,14 @@ def image_processing_met(data):
         if isinstance(year, int):
             century = ceil(abs(year) / 100)
             if year < 0:
-                return f"{century}th century BC"
+                if century == 1:
+                    return f"{century}st century BC"
+                elif century == 2:
+                    return f"{century}nd century BC"
+                elif century == 3:
+                    return f"{century}rd century BC"
+                else:
+                    return f"{century}th century BC"
             else:
                 if century == 1:
                     return f"{century}st century AD"
@@ -129,7 +137,8 @@ def image_processing_europeana(data):
 def blend_datasources(met_data, europeana_data):
     """
     Takes the pre-processed MET and Europeana datasets,
-    randomly combines them, and orders them according to height.
+    ensures they follow the same format, randomly 
+    combines them, and orders them according to height.
     For odd number rows, tallest photo should be in the center;
     for even number rows, shortest photo is centered.
     """
