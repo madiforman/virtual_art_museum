@@ -16,7 +16,7 @@ class Europeana:
         for query in query_terms:
             cursor = '*'  # Initial cursor value
             total_results = 0
-            max_results = 2  # Set a maximum number of results per query
+            max_results = 10  # Set a maximum number of results per query
             
             while cursor and total_results < max_results: 
                 response = apis.search(
@@ -59,6 +59,8 @@ class Europeana:
                 for key, value in lang_dict.items():
                     if key == 'en-US' or key == 'en':
                         return value
+            else:
+                print(f"No english description found for {metadata}")
         return None
 
     def get_english_title(self, metadata):
@@ -67,16 +69,18 @@ class Europeana:
                 for key, value in lang_dict.items():
                     if key == 'def':
                         return value
+            else:
+                print(f"No english title found for {metadata}")
         return None
 
     def filter_results(self):
-        self.df.pop('uri')
-        self.df.pop('description')
-        self.df.pop('title')
-        self.df.pop('type')
-        self.df.pop('concept')
-        self.df.pop('concept_lang')
-        self.df.fillna('Unknown', inplace=True) # fill missing values with 'Unknown'
+        # self.df.pop('uri')
+        # self.df.pop('description')
+        # self.df.pop('title')
+        # self.df.pop('type')
+        # self.df.pop('concept')
+        # self.df.pop('concept_lang')
+        # self.df.fillna('Unknown', inplace=True) # fill missing values with 'Unknown'
 
         columns_to_translate = ['description_lang', 'title_lang']
         for col in columns_to_translate:
@@ -84,6 +88,7 @@ class Europeana:
                 metadata = self.df[col]
                 english_description = self.get_english_description(metadata)
                 self.df['description'] = english_description
+
             if col == 'title_lang':
                 metadata = self.df[col]
                 english_title = self.get_english_title(metadata)
@@ -91,12 +96,16 @@ class Europeana:
 
         self.df.pop('description_lang')
         self.df.pop('title_lang')
+        self.df.pop('language')
         self.print_example_row()
 
-    def print_example_row(self):
-        row = self.df.iloc[0]
-        for idx in range(len(self.df.columns)):
-            print(f"{self.df.columns[idx]}: {row[idx]}")
+    def print_example_row(self, n=10):
+        rows = self.df.head(n)
+        for _, row in rows.iterrows():
+            for col in rows.columns:
+                print(f"{col}: {row[col]}")
+            print("---")
+
 
     def write_to_csv(self, filename):
         self.df.to_csv(filename, index=False)
