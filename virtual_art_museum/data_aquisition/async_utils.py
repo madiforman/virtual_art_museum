@@ -15,8 +15,10 @@ def check_dropbox_content(first_bytes: bytes):
 def check_europeana_response(url: str, content: bytes) -> str:
     if url.startswith('https://www.dropbox.com'):
         if check_dropbox_content(content):
+            print(f"Found valid dropbox url: {url}")
             return url
         else:
+            print(f"Invalid dropbox url: {url}")
             return ""
     else:
         return url
@@ -39,8 +41,9 @@ async def fetch(session:aiohttp.ClientSession, url:str, flag:str) -> str:
             else:
                 return ""
     except Exception as e:
+        print(f"Error fetching {url}: {e}")
         return ""
-
+        
 async def bound_fetch(
     semaphore: asyncio.Semaphore,
     session: aiohttp.ClientSession, 

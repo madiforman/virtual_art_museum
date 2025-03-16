@@ -33,8 +33,8 @@ import pandas as pd
 from tqdm import tqdm
 import numpy as np
 
-from async_utils import filter_images
-from common_functions import print_example_rows, century_mapping
+from .async_utils import filter_images
+from .common_functions import print_example_rows, century_mapping
 
 
 class MetMuseum:
@@ -158,7 +158,7 @@ class MetMuseum:
         self.df['Century'] = self.df['Year'].apply(century_mapping)
         return self.df
         
-    def create_final_csv(self, filename, save_final=False):
+    def create_final_csv(self, path, save_final=False):
         """
         Runs the above functions to create the final MET data we will use later on.
 
@@ -170,9 +170,9 @@ class MetMuseum:
             T/F on if actually want to save the result right now, by default False
         """
         self.df = self._request_image_urls()
-        # self.df = self.process_data()
-        # if save_final:
-        #     self.df.to_csv(filename, index=False)
+        self.df = self.process_data()
+        if save_final:
+            self.df.to_csv(path, index=False)
         print_example_rows(self.df, n=5)
         return None
     
@@ -188,8 +188,8 @@ def main():
     """
     Instantiate MetMuseum class with original file, query, filter, save.
     """
-    met = MetMuseum('data/MetObjects_final.csv', is_test=False)
-    met.filter_and_save(filename='data/MetObjects_final_filtered.csv')
+    met = MetMuseum('data/MetObjects_final.csv', is_test=True)
+    met.create_final_csv(path='data/MetObjects_final_filteredII.csv', save_final=True)
     print(f"Length of final filtered dataframe: {len(met.df)}")
 
 if __name__ == "__main__":

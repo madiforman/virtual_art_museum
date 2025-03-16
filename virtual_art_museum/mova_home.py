@@ -20,14 +20,21 @@ import math
 import os
 import re
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-print(f"Current directory: {current_dir}")
-# pylint: disable= import-error, 
 from data_aquisition.met_museum import MetMuseum
-
-met_path = os.path.join(current_dir, 'data_aquisition', 'data', 'MetObjects_final_filtered.csv')
-met = MetMuseum(met_path)
+base_dir = os.path.dirname(os.path.abspath(__file__))
+MET_PATH = os.path.join(base_dir, "data", "MetObjects_final_filtered.csv")
+print("SUCCESSFULLY IMPORTED MET MUSEUM")
+met = MetMuseum(MET_PATH)
 data = met.get_n_random_objs(18)
+
+# current_dir = os.path.dirname(os.path.abspath(__file__))
+# print(f"Current directory: {current_dir}")
+# # pylint: disable= import-error, 
+# from data_aquisition.met_museum import MetMuseum
+
+# met_path = os.path.join(current_dir, 'data_aquisition', 'data', 'MetObjects_final_filtered.csv')
+# met = MetMuseum(met_path)
+# data = met.get_n_random_objs(18)
 
 
 def image_processing_europeana(data):
@@ -168,7 +175,6 @@ def image_gallery(data):
                 st.image(data.iloc[i,-3], caption=caption)
                 i += 1
 
-data = image_processing_met(data)
 page_setup()
 sidebar_setup()
 # st.write(data) uncomment if you want to see how data is being stored :)
