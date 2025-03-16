@@ -6,19 +6,19 @@ import time
 import pandas as pd 
 from tqdm.asyncio import tqdm_asyncio
 
-def check_dropbox_content(first_bytes: bytes):
-    if first_bytes != b'<!DOCTYPE ': # if it is a valid dropbox url it will return hexxcode, not html
-        return True
-    else:
+def check_dropbox_content(content: bytes):
+    # content = content[:9]
+    if content == b'<!DOCTYPE': # if it is a valid dropbox url it will return hexxcode, not html
+        print("Found invalid dropbox url.")
         return False
+    else:
+        return True
 
 def check_europeana_response(url: str, content: bytes) -> str:
     if url.startswith('https://www.dropbox.com'):
         if check_dropbox_content(content):
-            print(f"Found valid dropbox url: {url}")
             return url
         else:
-            print(f"Invalid dropbox url: {url}")
             return ""
     else:
         return url
@@ -33,9 +33,16 @@ async def fetch(session:aiohttp.ClientSession, url:str, flag:str) -> str:
                         return data['primaryImage']
                     else:
                         return ""
+                    
                 elif flag == "EUROPEANA":
-                    content = await response.content.read(10)
-                    image_url = check_europeana_response(url, content)
+                    content = await response.content.read(9)
+                    if url.startswith('https://www.dropbox.com'):
+                        if check_dropbox_content(content):
+                            return url
+                        else:
+                            return ""
+                    return url
+                    
                 else:
                     raise ValueError(f"Invalid source given: {flag}. Must be either MET or EUROPEANA")
             else:

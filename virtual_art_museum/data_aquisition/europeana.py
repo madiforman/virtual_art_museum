@@ -30,15 +30,15 @@ import asyncio
 import aiohttp
 import os
 
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
 import pyeuropeana.utils as utils
 import pyeuropeana.apis as apis
 import pandas as pd
 from tqdm import tqdm
 
-from async_utils import filter_images
-from common_functions import print_example_rows, century_mapping
+from .async_utils import filter_images
+from .common_functions import print_example_rows, century_mapping
 
 class Europeana:
     """
@@ -47,9 +47,16 @@ class Europeana:
     Attributes:
         df (pd.DataFrame): [description]
     """
-    def __init__(self):
+    def __init__(self, file_path: str):
         self.df = pd.DataFrame()
+        if file_path == "":
+            self.df = self.create_final(path="", save_final=False)
+        else:
+           self.df = pd.read_csv(file_path, dtype='str')
 
+    def get_n_random_objs(self, n=10):
+        return self.df.sample(n)
+    
     def bulk_requests(self):
         """
         Function docstring.
@@ -57,7 +64,7 @@ class Europeana:
         Returns:
             pd.DataFrame: [description]
         """
-        query_terms = pd.read_csv('data/query_terms.csv', header=None)
+        query_terms = pd.read_csv('../data/query_terms.csv', header=None)
         query_terms = set(query_terms.iloc[:, 0].tolist())
         df_list = []
         for query in query_terms:
@@ -169,12 +176,12 @@ class Europeana:
         if save_final:
             self.df.to_csv(path, index=False)
         print_example_rows(self.df, n=5)
-        return None
+        return self.df
 
 def main():
     access_key = os.getenv('API_KEY')
-    europeana = Europeana()
-    europeana.create_final(path='data/europeana_data.csv', save_final=True)
+    # os.environ['EUROPEANA_API_KEY'] = access_key
+    europeana = Europeana(file_path='')
 
 if __name__ == "__main__":
     main()

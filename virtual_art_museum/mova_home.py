@@ -21,11 +21,22 @@ import os
 import re
 
 from data_aquisition.met_museum import MetMuseum
+from data_aquisition.europeana import Europeana
 base_dir = os.path.dirname(os.path.abspath(__file__))
+
 MET_PATH = os.path.join(base_dir, "data", "MetObjects_final_filtered.csv")
 print("SUCCESSFULLY IMPORTED MET MUSEUM")
-met = MetMuseum(MET_PATH)
-data = met.get_n_random_objs(18)
+
+EUROPEANA_PATH = os.path.join(base_dir, "data", "Europeana_data.csv")
+print("SUCCESFULLY IMPORTED EUROPEANA")
+
+# met = MetMuseum(MET_PATH)
+# met_data = met.get_n_random_objs(18)
+europeana = Europeana(EUROPEANA_PATH)
+europeana_data = europeana.get_n_random_objs(18)
+
+# for datum in data:
+#     print(datum['image_url'])
 
 # current_dir = os.path.dirname(os.path.abspath(__file__))
 # print(f"Current directory: {current_dir}")
@@ -156,14 +167,14 @@ def image_gallery(data):
     rows = n // 3
     # initialize iterator for row value
     i = 0
-
+    print(data)
     for row in range(rows):
         pics = st.columns([3,3,3], gap='medium', vertical_alignment='center')
         for pic in pics:
             with pic:
                 #splitting in case we want to add more to the caption
-                caption = data.iloc[i, -2]
-                st.image(data.iloc[i,-3], caption=caption)
+                # caption = data.iloc[i, '']
+                st.image(data.iloc[i,-2])
                 i += 1
 
     leftovers = n % 3
@@ -177,5 +188,4 @@ def image_gallery(data):
 
 page_setup()
 sidebar_setup()
-# st.write(data) uncomment if you want to see how data is being stored :)
-image_gallery(data)
+image_gallery(europeana_data)
