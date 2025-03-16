@@ -43,9 +43,90 @@ europeana_data = europeana.get_n_random_objs(18)
 # # pylint: disable= import-error, 
 # from data_aquisition.met_museum import MetMuseum
 
+<<<<<<< HEAD
+    data.rename(columns = {'Artist Display Name' : 'Artist',
+                           'Artist Display Bio' : 'Artist biographic information',
+                           'Object Begin Date' : 'Year',
+                           'Repository' : 'datasource'}, inplace=True)
+
+    def split_delimited(cell):
+        ''' Splits delimited cells into lists '''
+        if isinstance(cell, str) and '|' in cell:
+            items = [item.strip() for item in cell.split('|')]
+            return ", ".join(items)
+        return cell
+
+    for col in data.columns:
+        data[col] = data[col].apply(split_delimited)
+
+    def clean_culture(culture):
+        ''' Gets rid of possibly / probably and splits at the comma '''
+        if not isinstance(culture, str):
+            return culture
+            
+        cleaned = re.sub(r'\b(?:probably|possibly)\b\s*', '', culture, flags=re.IGNORECASE)
+        cleaned = cleaned.split(',')[0].strip()
+        return cleaned
+
+    data['Culture'] = data['Culture'].apply(clean_culture)
+
+    def replace_empty(df):
+        ''' Replaces unknown values with a string for the pop-up '''
+        for col in df.columns:
+            is_empty = (
+                df[col].isna() |
+                (df[col] == None) |
+                (df[col].astype(str).str.strip() == ''))
+
+            df.loc[is_empty, col] = f"{col} unknown"
+            
+        return df
+
+    data = replace_empty(data)
+
+    def clean_title(title):
+        ''' Makes a cleaner title to print '''
+        if not isinstance(title, str):
+            return title
+
+        cleaned = re.sub(r'\([^)]*\)', '', title)
+        cleaned = re.sub(r'^\W+|\W+$', '', cleaned)
+        return cleaned.strip()
+
+    data['caption_title'] = data['Title'].apply(clean_title)
+
+    def century_mapping(year):
+        ''' Creates a century value for applicable years '''
+        if isinstance(year, int):
+            century = ceil(abs(year) / 100)
+            if year < 0:
+                if century == 1:
+                    return f"{century}st century BC"
+                elif century == 2:
+                    return f"{century}nd century BC"
+                elif century == 3:
+                    return f"{century}rd century BC"
+                else:
+                    return f"{century}th century BC"
+            else:
+                if century == 1:
+                    return f"{century}st century AD"
+                elif century == 2:
+                    return f"{century}nd century AD"
+                elif century == 3:
+                    return f"{century}rd century AD"
+                else:
+                    return f"{century}th century AD"
+        return year
+
+    data['Century'] = data['Year'].apply(century_mapping)
+            
+    return data
+=======
 # met_path = os.path.join(current_dir, 'data_aquisition', 'data', 'MetObjects_final_filtered.csv')
 # met = MetMuseum(met_path)
 # data = met.get_n_random_objs(18)
+>>>>>>> b0a30439c364f587892c6985b0da923ef1c2cec7
 
 
 def image_processing_europeana(data):
@@ -55,7 +136,8 @@ def image_processing_europeana(data):
 def blend_datasources(met_data, europeana_data):
     """
     Takes the pre-processed MET and Europeana datasets,
-    randomly combines them, and orders them according to height.
+    ensures they follow the same format, randomly 
+    combines them, and orders them according to height.
     For odd number rows, tallest photo should be in the center;
     for even number rows, shortest photo is centered.
     """
@@ -68,6 +150,17 @@ def page_setup():
         layout="wide",
         initial_sidebar_state="collapsed"
     )
+
+    if 'filters_reset' not in st.session_state:
+        st.session_state.filters_reset = False
+    if 'search' not in st.session_state:
+        st.session_state.search = ''
+    if 'culture' not in st.session_state:
+        st.session_state.culture = []
+    if 'years' not in st.session_state:
+        st.session_state.years = (min(data['Year'].astype(int)), max(data['Year'].astype(int)))
+    if 'datasource' not in st.session_state:
+        st.session_state.datasource = None
 
     st.logo("https://github.com/madiforman/virtual_art_museum/blob/main/images/MoVA%20bw%20logo.png?raw=true",
         size="large")
@@ -93,19 +186,7 @@ def page_setup():
 
 def sidebar_setup():
     """ Sidebar configuration """
-
-    # initialize session state values
-    if 'filters_reset' not in st.session_state:
-        st.session_state.filters_reset = False
-    if 'search' not in st.session_state:
-        st.session_state.search = ''
-    if 'culture' not in st.session_state:
-        st.session_state.culture = []
-    if 'years' not in st.session_state:
-        st.session_state.years = (min(data['Year'].astype(int)), max(data['Year'].astype(int)))
-    if 'datasource' not in st.session_state:
-        st.session_state.datasource = None
-
+    
     st.sidebar.header('Advanced filters')
 
     reset_button = st.sidebar.button('Reset Filters')
