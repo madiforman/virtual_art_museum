@@ -13,7 +13,7 @@ class test_image_processing_met(unittest.TestCase):
             'Title': ['Terracotta rim fragment of a kylix (drinking cup)', '[piece]', 'Headrest of Khentika'],
             'Culture': ['Greek, Attic', 'Indonesia (Java)', 'probably Egyptian'],
             'Artist': ['Artist One | Artist Two', ' ', 'Big Bird'],
-            'Year': [-600, -510, -2323],
+            'Year': [-600, -510, 64],
             'Material': ['Terracotta', 'Bronze|Wood', 'Travertine (Egyptian alabaster)'],
             'Repository': ['Metropolitan Museum of Art', 'the MET', ' '],
             'Tags': ['pottery|cup', np.nan, 'furniture'],
@@ -43,7 +43,7 @@ class test_image_processing_met(unittest.TestCase):
         ''' Test if years are correctly mapped to centuries '''
         self.assertEqual(self.processed_data.loc[0, 'Century'], '6th century BC')
         self.assertEqual(self.processed_data.loc[1, 'Century'], '6th century BC')
-        self.assertEqual(self.processed_data.loc[2, 'Century'], '24th century BC')
+        self.assertEqual(self.processed_data.loc[2, 'Century'], '1st century AD')
         
     def test_empty_values_replacement(self):
         ''' Test if empty values are replaced with column-specific unknown text '''

@@ -12,6 +12,7 @@ import time
 import streamlit as st
 import pandas as pd
 import numpy as np
+
 from math import ceil
 
 import random
@@ -52,7 +53,8 @@ def image_processing_met(data):
 
     data.rename(columns = {'Artist Display Name' : 'Artist',
                            'Artist Display Bio' : 'Artist biographic information',
-                           'Object Begin Date' : 'Year'}, inplace=True)
+                           'Object Begin Date' : 'Year',
+                           'Repository' : 'datasource'}, inplace=True)
 
     def split_delimited(cell):
         ''' Splits delimited cells into lists '''
@@ -84,7 +86,7 @@ def image_processing_met(data):
                 (df[col].astype(str).str.strip() == ''))
 
             df.loc[is_empty, col] = f"{col} unknown"
-
+            
         return df
 
     data = replace_empty(data)
@@ -105,7 +107,14 @@ def image_processing_met(data):
         if isinstance(year, int):
             century = ceil(abs(year) / 100)
             if year < 0:
-                return f"{century}th century BC"
+                if century == 1:
+                    return f"{century}st century BC"
+                elif century == 2:
+                    return f"{century}nd century BC"
+                elif century == 3:
+                    return f"{century}rd century BC"
+                else:
+                    return f"{century}th century BC"
             else:
                 if century == 1:
                     return f"{century}st century AD"
@@ -129,7 +138,8 @@ def image_processing_europeana(data):
 def blend_datasources(met_data, europeana_data):
     """
     Takes the pre-processed MET and Europeana datasets,
-    randomly combines them, and orders them according to height.
+    ensures they follow the same format, randomly 
+    combines them, and orders them according to height.
     For odd number rows, tallest photo should be in the center;
     for even number rows, shortest photo is centered.
     """
@@ -142,6 +152,17 @@ def page_setup():
         layout="wide",
         initial_sidebar_state="collapsed"
     )
+
+    if 'filters_reset' not in st.session_state:
+        st.session_state.filters_reset = False
+    if 'search' not in st.session_state:
+        st.session_state.search = ''
+    if 'culture' not in st.session_state:
+        st.session_state.culture = []
+    if 'years' not in st.session_state:
+        st.session_state.years = (min(data['Year'].astype(int)), max(data['Year'].astype(int)))
+    if 'datasource' not in st.session_state:
+        st.session_state.datasource = None
 
     st.logo("https://github.com/madiforman/virtual_art_museum/blob/main/images/MoVA%20bw%20logo.png?raw=true",
         size="large")
@@ -167,19 +188,7 @@ def page_setup():
 
 def sidebar_setup():
     """ Sidebar configuration """
-
-    # initialize session state values
-    if 'filters_reset' not in st.session_state:
-        st.session_state.filters_reset = False
-    if 'search' not in st.session_state:
-        st.session_state.search = ''
-    if 'culture' not in st.session_state:
-        st.session_state.culture = []
-    if 'years' not in st.session_state:
-        st.session_state.years = (min(data['Year'].astype(int)), max(data['Year'].astype(int)))
-    if 'datasource' not in st.session_state:
-        st.session_state.datasource = None
-
+    
     st.sidebar.header('Advanced filters')
 
     reset_button = st.sidebar.button('Reset Filters')

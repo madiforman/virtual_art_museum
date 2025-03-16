@@ -12,6 +12,7 @@ import time
 import streamlit as st
 import pandas as pd
 import numpy as np
+
 from math import ceil
 
 import random
@@ -85,7 +86,7 @@ def image_processing_met(data):
                 (df[col].astype(str).str.strip() == ''))
 
             df.loc[is_empty, col] = f"{col} unknown"
-
+            
         return df
 
     data = replace_empty(data)
@@ -152,6 +153,17 @@ def page_setup():
         initial_sidebar_state="collapsed"
     )
 
+    if 'filters_reset' not in st.session_state:
+        st.session_state.filters_reset = False
+    if 'search' not in st.session_state:
+        st.session_state.search = ''
+    if 'culture' not in st.session_state:
+        st.session_state.culture = []
+    if 'years' not in st.session_state:
+        st.session_state.years = (min(data['Year'].astype(int)), max(data['Year'].astype(int)))
+    if 'datasource' not in st.session_state:
+        st.session_state.datasource = None
+
     st.logo("https://github.com/madiforman/virtual_art_museum/blob/main/images/MoVA%20bw%20logo.png?raw=true",
         size="large")
 
@@ -176,19 +188,7 @@ def page_setup():
 
 def sidebar_setup():
     """ Sidebar configuration """
-
-    # initialize session state values
-    if 'filters_reset' not in st.session_state:
-        st.session_state.filters_reset = False
-    if 'search' not in st.session_state:
-        st.session_state.search = ''
-    if 'culture' not in st.session_state:
-        st.session_state.culture = []
-    if 'years' not in st.session_state:
-        st.session_state.years = (min(data['Year'].astype(int)), max(data['Year'].astype(int)))
-    if 'datasource' not in st.session_state:
-        st.session_state.datasource = None
-
+    
     st.sidebar.header('Advanced filters')
 
     reset_button = st.sidebar.button('Reset Filters')
