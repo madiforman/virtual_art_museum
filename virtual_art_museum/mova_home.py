@@ -20,40 +20,34 @@ import math
 import os
 import re
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-
-# pylint: disable= import-error, 
 from data_aquisition.met_museum import MetMuseum
+from data_aquisition.europeana import Europeana
+base_dir = os.path.dirname(os.path.abspath(__file__))
 
-met_path = os.path.join(current_dir, 'data_aquisition', 'MetObjects_final.csv')
-met = MetMuseum(met_path)
-data = met.get_n_random_objs(18)
+MET_PATH = os.path.join(base_dir, "data", "MetObjects_final_filtered.csv")
+print("SUCCESSFULLY IMPORTED MET MUSEUM")
 
-# CULTURES = ['American', 'British', 'Bohemian', 'Canadian', 'Chinese', 'Dutch', 
-#    'European', 'French', 'Finnish', 'Flemish', 'German', - madi will work on this
+EUROPEANA_PATH = os.path.join(base_dir, "data", "Europeana_data.csv")
+print("SUCCESFULLY IMPORTED EUROPEANA")
 
-def image_processing_met(data):
-    '''
-    Processes MET dataset to make it readable for later functions.
+# met = MetMuseum(MET_PATH)
+# met_data = met.get_n_random_objs(18)
+europeana = Europeana(EUROPEANA_PATH)
+europeana_data = europeana.get_n_random_objs(18)
 
-    Processing steps:
-        - Filter out irrelevant columns
-        - Change 'Repository' values to 'MET'
-        - Rename columns to be more readable
-        - Replace None values with [column name] unknown
-        - Split delimited values into a list
-        - Create a century column based on the years?
-    '''
-    data = data[['Object Number', 'Title', 'Culture', 'Artist Display Name', 
-                 'Artist Display Bio', 'Object Begin Date', 'Medium', 'Dimensions',
-                'Repository', 'Tags', 'image_url']]
+# for datum in data:
+#     print(datum['image_url'])
 
-    data['Repository'] = 'MET'
-    data['Object Begin Date'] = data['Object Begin Date'].astype(int)
+# current_dir = os.path.dirname(os.path.abspath(__file__))
+# print(f"Current directory: {current_dir}")
+# # pylint: disable= import-error, 
+# from data_aquisition.met_museum import MetMuseum
 
+<<<<<<< HEAD
     data.rename(columns = {'Artist Display Name' : 'Artist',
                            'Artist Display Bio' : 'Artist biographic information',
-                           'Object Begin Date' : 'Year'}, inplace=True)
+                           'Object Begin Date' : 'Year',
+                           'Repository' : 'datasource'}, inplace=True)
 
     def split_delimited(cell):
         ''' Splits delimited cells into lists '''
@@ -85,7 +79,7 @@ def image_processing_met(data):
                 (df[col].astype(str).str.strip() == ''))
 
             df.loc[is_empty, col] = f"{col} unknown"
-
+            
         return df
 
     data = replace_empty(data)
@@ -106,7 +100,14 @@ def image_processing_met(data):
         if isinstance(year, int):
             century = ceil(abs(year) / 100)
             if year < 0:
-                return f"{century}th century BC"
+                if century == 1:
+                    return f"{century}st century BC"
+                elif century == 2:
+                    return f"{century}nd century BC"
+                elif century == 3:
+                    return f"{century}rd century BC"
+                else:
+                    return f"{century}th century BC"
             else:
                 if century == 1:
                     return f"{century}st century AD"
@@ -121,6 +122,11 @@ def image_processing_met(data):
     data['Century'] = data['Year'].apply(century_mapping)
             
     return data
+=======
+# met_path = os.path.join(current_dir, 'data_aquisition', 'data', 'MetObjects_final_filtered.csv')
+# met = MetMuseum(met_path)
+# data = met.get_n_random_objs(18)
+>>>>>>> b0a30439c364f587892c6985b0da923ef1c2cec7
 
 
 def image_processing_europeana(data):
@@ -130,7 +136,8 @@ def image_processing_europeana(data):
 def blend_datasources(met_data, europeana_data):
     """
     Takes the pre-processed MET and Europeana datasets,
-    randomly combines them, and orders them according to height.
+    ensures they follow the same format, randomly 
+    combines them, and orders them according to height.
     For odd number rows, tallest photo should be in the center;
     for even number rows, shortest photo is centered.
     """
@@ -143,6 +150,17 @@ def page_setup():
         layout="wide",
         initial_sidebar_state="collapsed"
     )
+
+    if 'filters_reset' not in st.session_state:
+        st.session_state.filters_reset = False
+    if 'search' not in st.session_state:
+        st.session_state.search = ''
+    if 'culture' not in st.session_state:
+        st.session_state.culture = []
+    if 'years' not in st.session_state:
+        st.session_state.years = (min(data['Year'].astype(int)), max(data['Year'].astype(int)))
+    if 'datasource' not in st.session_state:
+        st.session_state.datasource = None
 
     st.logo("https://github.com/madiforman/virtual_art_museum/blob/main/images/MoVA%20bw%20logo.png?raw=true",
         size="large")
@@ -168,19 +186,7 @@ def page_setup():
 
 def sidebar_setup():
     """ Sidebar configuration """
-
-    # initialize session state values
-    if 'filters_reset' not in st.session_state:
-        st.session_state.filters_reset = False
-    if 'search' not in st.session_state:
-        st.session_state.search = ''
-    if 'culture' not in st.session_state:
-        st.session_state.culture = []
-    if 'years' not in st.session_state:
-        st.session_state.years = (min(data['Year'].astype(int)), max(data['Year'].astype(int)))
-    if 'datasource' not in st.session_state:
-        st.session_state.datasource = None
-
+    
     st.sidebar.header('Advanced filters')
 
     reset_button = st.sidebar.button('Reset Filters')
@@ -242,14 +248,14 @@ def image_gallery(data):
     rows = n // 3
     # initialize iterator for row value
     i = 0
-
+    print(data)
     for row in range(rows):
         pics = st.columns([3,3,3], gap='medium', vertical_alignment='center')
         for pic in pics:
             with pic:
                 #splitting in case we want to add more to the caption
-                caption = data.iloc[i, -2]
-                st.image(data.iloc[i,-3], caption=caption)
+                # caption = data.iloc[i, '']
+                st.image(data.iloc[i,-2])
                 i += 1
 
     leftovers = n % 3
@@ -261,8 +267,6 @@ def image_gallery(data):
                 st.image(data.iloc[i,-3], caption=caption)
                 i += 1
 
-data = image_processing_met(data)
 page_setup()
 sidebar_setup()
-# st.write(data) uncomment if you want to see how data is being stored :)
-image_gallery(data)
+image_gallery(europeana_data)
