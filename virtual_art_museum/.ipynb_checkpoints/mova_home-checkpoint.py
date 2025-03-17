@@ -20,120 +20,172 @@ import math
 import os
 import re
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
+base_dir = os.path.dirname(os.path.abspath(__file__))
 
-# pylint: disable= import-error, 
-from data_aquisition.met_museum import MetMuseum
+MET_PATH = os.path.join(base_dir, "data", "MetObjects_final_filtered.csv")
+EUROPEANA_PATH = os.path.join(base_dir, "data", "Europeana_data.csv")
 
-met_path = os.path.join(current_dir, 'data_aquisition', 'MetObjects_final.csv')
-met = MetMuseum(met_path)
-data = met.get_n_random_objs(18)
+met = pd.read_csv(MET_PATH)
+data = pd.read_csv(EUROPEANA_PATH)
 
-# CULTURES = ['American', 'British', 'Bohemian', 'Canadian', 'Chinese', 'Dutch', 
-#    'European', 'French', 'Finnish', 'Flemish', 'German', - madi will work on this
+def image_processing_europeana(data):
+    """
+    Transforms the Europeana data to be 
+    compatible with MET merge.
+    - Reads through the description column
+        and tries to match for any Mediums
+        or Tags (based on MET)
+    - Updates country column to match any
+        culture within the MET data
+    - Makes a fake column for Artist Bio
+    - Replaces 'Unknown' in year column
+        with unrealistic value
+    - Renames columns to match MET's
+    """
+    data['Medium'] = "Medium unknown"
+    data['Tags'] = "Tags unknown"
+    data['repository'] = "Europeana"
 
-def image_processing_met(data):
-    '''
-    Processes MET dataset to make it readable for later functions.
+    tags = met['Tags'].str.split(',').explode().unique()
+    cultures = met['Culture'].str.split(',').explode().unique()
+    
+    def find_tags(description):
+        ''' Searches through the description
+        column, finding any Tag matches '''
+        tags_match = []
+        
+        if description == 'Unknown' or str(description).startswith('warning:'):
+            return "Description unknown"
 
-    Processing steps:
-        - Filter out irrelevant columns
-        - Change 'Repository' values to 'MET'
-        - Rename columns to be more readable
-        - Replace None values with [column name] unknown
-        - Split delimited values into a list
-        - Create a century column based on the years?
-    '''
-    data = data[['Object Number', 'Title', 'Culture', 'Artist Display Name', 
-                 'Artist Display Bio', 'Object Begin Date', 'Medium', 'Dimensions',
-                'Repository', 'Tags', 'image_url']]
+        description = str(description).lower()
+        
+        for tag in tags:
+            if tag.lower() in description:
+                tags_match.append(tag)
 
-    data['Repository'] = 'MET'
-    data['Object Begin Date'] = data['Object Begin Date'].astype(int)
+        return description
 
-    data.rename(columns = {'Artist Display Name' : 'Artist',
-                           'Artist Display Bio' : 'Artist biographic information',
-                           'Object Begin Date' : 'Year',
-                           'Repository' : 'datasource'}, inplace=True)
+    data['description'] = data['description'].apply(find_tags)
 
-    def split_delimited(cell):
-        ''' Splits delimited cells into lists '''
-        if isinstance(cell, str) and '|' in cell:
-            items = [item.strip() for item in cell.split('|')]
-            return ", ".join(items)
-        return cell
+    for idx, row in data.iterrows():
+        description = str(row['description']).lower()
 
-    for col in data.columns:
-        data[col] = data[col].apply(split_delimited)
+        tags_match = [tag for tag in tags if tag and tag.lower() in description]
+        if tags_match:
+            data.at[idx, 'Tags'] = ", ".join(tags_match)
 
-    def clean_culture(culture):
-        ''' Gets rid of possibly / probably and splits at the comma '''
-        if not isinstance(culture, str):
-            return culture
-            
-        cleaned = re.sub(r'\b(?:probably|possibly)\b\s*', '', culture, flags=re.IGNORECASE)
-        cleaned = cleaned.split(',')[0].strip()
-        return cleaned
+    country_to_culture = {
+        'United Kingdom': 'British',
+        'England': 'British',
+        'Scotland': 'British',
+        'Wales': 'British',
+        'Ireland': 'Irish',
+        'France': 'French',
+        'Germany': 'German',
+        'Italy': 'Italian',
+        'Spain': 'Spanish',
+        'Portugal': 'Portuguese',
+        'Netherlands': 'Dutch',
+        'Belgium': 'Belgian',
+        'Switzerland': 'Swiss',
+        'Austria': 'Austrian',
+        'Greece': 'Greek',
+        'Denmark': 'Danish',
+        'Sweden': 'Swedish',
+        'Norway': 'Norwegian',
+        'Finland': 'Finnish',
+        'Russia': 'Russian',
+        'Poland': 'Polish',
+        'Hungary': 'Hungarian',
+        'Czech Republic': 'Czech',
+        'Romania': 'Romanian',
+        'Bulgaria': 'Bulgarian',
+        'Turkey': 'Turkish'}
 
-    data['Culture'] = data['Culture'].apply(clean_culture)
+    for culture in cultures:
+        country_match = None
+        culture = str(culture).strip()
 
-    def replace_empty(df):
-        ''' Replaces unknown values with a string for the pop-up '''
-        for col in df.columns:
-            is_empty = (
-                df[col].isna() |
-                (df[col] == None) |
-                (df[col].astype(str).str.strip() == ''))
+        # Remove suffixes to check for match
+        if culture.endswith('ish'):
+            country_match = culture[:-3]
+        elif culture.endswith('ese'):
+            country_match = culture[:-3]
+        elif culture.endswith('ian'):
+            country_match = culture[:-3]
+        elif culture.endswith('ch'):
+            country_match = culture[:-2] + 'ce'
+        elif culture.endswith('ish'):
+            country_match = culture[:-3]
 
-            df.loc[is_empty, col] = f"{col} unknown"
-            
-        return df
+        if country_match and country_match not in country_to_culture.values():
+            country_to_culture[country_match] = culture
 
-    data = replace_empty(data)
+    def map_countries_to_culture(country):
+        ''' Maps countries to respective cultures '''
+        if pd.isna(country) or country == 'Unknown':
+            return 'Culture unknown'
+
+        country = str(country).strip()
+
+        if country in country_to_culture:
+            return country_to_culture[country]
+
+        for known_country, culture in country_to_culture.items():
+            if known_country in country:
+                return culture
+
+        for culture in cultures:
+            culture_lower = culture.lower()
+            country_lower = country.lower()
+            if culture_lower in country_lower:
+                return culture
+        
+        return 'Culture unknown'
+
+    data['Culture'] = data['country'].apply(map_countries_to_culture)
 
     def clean_title(title):
         ''' Makes a cleaner title to print '''
         if not isinstance(title, str):
             return title
 
-        cleaned = re.sub(r'\([^)]*\)', '', title)
-        cleaned = re.sub(r'^\W+|\W+$', '', cleaned)
-        return cleaned.strip()
+        comma = title.find(',')
+        period = title.find('.')
 
-    data['caption_title'] = data['Title'].apply(clean_title)
+        if comma == -1 and period == -1:
+            return title
+        elif comma == -1:
+            return title[:period].strip()
+        elif period == -1:
+            return title[:comma].strip()
+        else:
+            endpoint = min(idx for idx in [comma, period] if idx >= 0)
+            return title[:endpoint].strip()
 
-    def century_mapping(year):
-        ''' Creates a century value for applicable years '''
-        if isinstance(year, int):
-            century = ceil(abs(year) / 100)
-            if year < 0:
-                if century == 1:
-                    return f"{century}st century BC"
-                elif century == 2:
-                    return f"{century}nd century BC"
-                elif century == 3:
-                    return f"{century}rd century BC"
-                else:
-                    return f"{century}th century BC"
-            else:
-                if century == 1:
-                    return f"{century}st century AD"
-                elif century == 2:
-                    return f"{century}nd century AD"
-                elif century == 3:
-                    return f"{century}rd century AD"
-                else:
-                    return f"{century}th century AD"
-        return year
+    data['title'] = data['title'].apply(clean_title)
 
-    data['Century'] = data['Year'].apply(century_mapping)
-            
+    def clean_creator(artist):
+        if pd.isna(artist) or artist == 'Unknown' or str(artist).startswith('http://'):
+            return "Artist unknown"
+        return artist  
+
+    data['creator'] = data['creator'].apply(clean_creator)
+
+    data['Artist biographic information'] = "Artist biographic information unknown"
+    data['Dimensions'] = "Dimensions unknown"
+    data['year'] = data['year'].replace('Unknown', 9999).astype(int)
+
+    data = data.rename(columns = {'europeana_id' : 'Object Number',
+                                  'title' : 'Title',
+                                  'creator' : 'Artist',
+                                  'description' : 'Description',
+                                  'provider' : 'Department',
+                                  'year' : 'Year',
+                                  'repository' : 'Repository'})
+    data = data.drop(columns=['country'])
+        
     return data
-
-
-def image_processing_europeana(data):
-    ## do something
-    return
 
 def blend_datasources(met_data, europeana_data):
     """
@@ -143,7 +195,9 @@ def blend_datasources(met_data, europeana_data):
     For odd number rows, tallest photo should be in the center;
     for even number rows, shortest photo is centered.
     """
-    return
+    combined = pd.concat([met_data, europeana_data], ignore_index=True)
+    combined = combined.sample(frac=1).reset_index(drop=True)
+    return combined
 
 def page_setup():
     """ Page configuation """
@@ -159,8 +213,8 @@ def page_setup():
         st.session_state.search = ''
     if 'culture' not in st.session_state:
         st.session_state.culture = []
-    if 'years' not in st.session_state:
-        st.session_state.years = (min(data['Year'].astype(int)), max(data['Year'].astype(int)))
+    #if 'years' not in st.session_state:
+        #st.session_state.years = (min(data['Year'].astype(int)), max(data['Year'].astype(int)))
     if 'datasource' not in st.session_state:
         st.session_state.datasource = None
 
@@ -250,14 +304,14 @@ def image_gallery(data):
     rows = n // 3
     # initialize iterator for row value
     i = 0
-
+    print(data)
     for row in range(rows):
         pics = st.columns([3,3,3], gap='medium', vertical_alignment='center')
         for pic in pics:
             with pic:
                 #splitting in case we want to add more to the caption
-                caption = data.iloc[i, -2]
-                st.image(data.iloc[i,-3], caption=caption)
+                caption = data.iloc[i, 1]
+                st.image(data.iloc[i,-4])
                 i += 1
 
     leftovers = n % 3
@@ -265,12 +319,12 @@ def image_gallery(data):
         lastrow = st.columns(leftovers, gap='medium', vertical_alignment='center')
         for j in range(leftovers):
             with lastrow[j]:
-                caption = data.iloc[i,-2]
-                st.image(data.iloc[i,-3], caption=caption)
+                caption = data.iloc[i,1]
+                st.image(data.iloc[i,-4], caption=caption)
                 i += 1
 
-data = image_processing_met(data)
+data = image_processing_europeana(data)
+combined = blend_datasources(met, data)
 page_setup()
-sidebar_setup()
-# st.write(data) uncomment if you want to see how data is being stored :)
-image_gallery(data)
+#sidebar_setup()
+image_gallery(combined)
