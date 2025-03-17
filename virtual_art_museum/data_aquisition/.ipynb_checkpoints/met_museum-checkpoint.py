@@ -126,15 +126,14 @@ class MetMuseum:
         return cleaned.strip()
         
     def process_data(self):
-        """ Filters to only relevant columns and renames / cleans columns """
-        cols_to_keep = ['Object Number', 'Department', 'Title', 'Culture', 'Artist Display Name', 
-                        'Artist Display Bio', 'Object Begin Date', 'Medium',
+        """ Mya comment here """
+        cols_to_keep = ['Object Number', 'Title', 'Culture', 'Artist Display Name', 
+                        'Artist Display Bio', 'Object Begin Date', 'Medium', 'Dimensions',
                         'Repository', 'Tags', 'image_url']
 
         self.df = self.df[cols_to_keep]
         # Change repository to MET
         self.df['Repository'] = 'MET'
-        self.df['Description'] = "Description unknown"
         self.df['Object Begin Date'] = self.df['Object Begin Date'].astype(int)
 
         # Rename columns to be more readable
