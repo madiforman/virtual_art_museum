@@ -11,42 +11,122 @@ import time
 
 import streamlit as st
 import pandas as pd
+import numpy as np
+
+from math import ceil
 
 import random
 import math
 import os
+import re
 
+from data_aquisition.met_museum import MetMuseum
+from data_aquisition.europeana import Europeana
+base_dir = os.path.dirname(os.path.abspath(__file__))
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
+MET_PATH = os.path.join(base_dir, "data", "MetObjects_final_filtered.csv")
+print("SUCCESSFULLY IMPORTED MET MUSEUM")
 
-met_path = os.path.join(current_dir, 'data_aquisition', 'MetObjects_final.csv')
-met = MetMuseum(met_path)
-data = met.get_n_random_objs(9)
+EUROPEANA_PATH = os.path.join(base_dir, "data", "Europeana_data.csv")
+print("SUCCESFULLY IMPORTED EUROPEANA")
 
-def image_processing_met(data):
-    data = data[['Object Number', 'Title', 'Culture', 'Artist Display Name', 
-                 'Artist Display Bio', 'Object Begin Date', 'Medium', 'Dimensions',
-                'Repository', 'Tags', 'image_url']]
+# met = MetMuseum(MET_PATH)
+# met_data = met.get_n_random_objs(18)
+europeana = Europeana(EUROPEANA_PATH)
+europeana_data = europeana.get_n_random_objs(18)
 
-    data['Repository'] = 'MET'
-    data['Object Begin Date'] = data['Object Begin Date'].astype(int)
+# for datum in data:
+#     print(datum['image_url'])
 
+# current_dir = os.path.dirname(os.path.abspath(__file__))
+# print(f"Current directory: {current_dir}")
+# # pylint: disable= import-error, 
+# from data_aquisition.met_museum import MetMuseum
+
+<<<<<<< HEAD
     data.rename(columns = {'Artist Display Name' : 'Artist',
                            'Artist Display Bio' : 'Artist biographic information',
-                           'Object Begin Date' : 'Year'}, inplace=True)
+                           'Object Begin Date' : 'Year',
+                           'Repository' : 'datasource'}, inplace=True)
+
+    def split_delimited(cell):
+        ''' Splits delimited cells into lists '''
+        if isinstance(cell, str) and '|' in cell:
+            items = [item.strip() for item in cell.split('|')]
+            return ", ".join(items)
+        return cell
 
     for col in data.columns:
-        if not col == 'Tags':
-            data[col] = data[col].apply(
-                lambda x: f"{col} unknown" if pd.isna(x) or x == ' ' else x
-            )
+        data[col] = data[col].apply(split_delimited)
+
+    def clean_culture(culture):
+        ''' Gets rid of possibly / probably and splits at the comma '''
+        if not isinstance(culture, str):
+            return culture
             
-        if isinstance(data[col].iloc[0], str) and '|' in data[col].iloc[0]:
-            data[col] = data[col].apply(
-                lambda x: [item.strip() for item in x.split('|')] if isinstance(x, str) else []
-            )            
-        
+        cleaned = re.sub(r'\b(?:probably|possibly)\b\s*', '', culture, flags=re.IGNORECASE)
+        cleaned = cleaned.split(',')[0].strip()
+        return cleaned
+
+    data['Culture'] = data['Culture'].apply(clean_culture)
+
+    def replace_empty(df):
+        ''' Replaces unknown values with a string for the pop-up '''
+        for col in df.columns:
+            is_empty = (
+                df[col].isna() |
+                (df[col] == None) |
+                (df[col].astype(str).str.strip() == ''))
+
+            df.loc[is_empty, col] = f"{col} unknown"
+            
+        return df
+
+    data = replace_empty(data)
+
+    def clean_title(title):
+        ''' Makes a cleaner title to print '''
+        if not isinstance(title, str):
+            return title
+
+        cleaned = re.sub(r'\([^)]*\)', '', title)
+        cleaned = re.sub(r'^\W+|\W+$', '', cleaned)
+        return cleaned.strip()
+
+    data['caption_title'] = data['Title'].apply(clean_title)
+
+    def century_mapping(year):
+        ''' Creates a century value for applicable years '''
+        if isinstance(year, int):
+            century = ceil(abs(year) / 100)
+            if year < 0:
+                if century == 1:
+                    return f"{century}st century BC"
+                elif century == 2:
+                    return f"{century}nd century BC"
+                elif century == 3:
+                    return f"{century}rd century BC"
+                else:
+                    return f"{century}th century BC"
+            else:
+                if century == 1:
+                    return f"{century}st century AD"
+                elif century == 2:
+                    return f"{century}nd century AD"
+                elif century == 3:
+                    return f"{century}rd century AD"
+                else:
+                    return f"{century}th century AD"
+        return year
+
+    data['Century'] = data['Year'].apply(century_mapping)
+            
     return data
+=======
+# met_path = os.path.join(current_dir, 'data_aquisition', 'data', 'MetObjects_final_filtered.csv')
+# met = MetMuseum(met_path)
+# data = met.get_n_random_objs(18)
+>>>>>>> b0a30439c364f587892c6985b0da923ef1c2cec7
 
 
 def image_processing_europeana(data):
@@ -56,7 +136,8 @@ def image_processing_europeana(data):
 def blend_datasources(met_data, europeana_data):
     """
     Takes the pre-processed MET and Europeana datasets,
-    randomly combines them, and orders them according to height.
+    ensures they follow the same format, randomly 
+    combines them, and orders them according to height.
     For odd number rows, tallest photo should be in the center;
     for even number rows, shortest photo is centered.
     """
@@ -69,6 +150,17 @@ def page_setup():
         layout="wide",
         initial_sidebar_state="collapsed"
     )
+
+    if 'filters_reset' not in st.session_state:
+        st.session_state.filters_reset = False
+    if 'search' not in st.session_state:
+        st.session_state.search = ''
+    if 'culture' not in st.session_state:
+        st.session_state.culture = []
+    if 'years' not in st.session_state:
+        st.session_state.years = (min(data['Year'].astype(int)), max(data['Year'].astype(int)))
+    if 'datasource' not in st.session_state:
+        st.session_state.datasource = None
 
     st.logo("https://github.com/madiforman/virtual_art_museum/blob/main/images/MoVA%20bw%20logo.png?raw=true",
         size="large")
@@ -94,19 +186,7 @@ def page_setup():
 
 def sidebar_setup():
     """ Sidebar configuration """
-
-    # initialize session state values
-    if 'filters_reset' not in st.session_state:
-        st.session_state.filters_reset = False
-    if 'search' not in st.session_state:
-        st.session_state.search = ''
-    if 'medium' not in st.session_state:
-        st.session_state.medium = []
-    if 'years' not in st.session_state:
-        st.session_state.years = (int(min(data['Year'])), int(max(data['Year'])))
-    if 'datasource' not in st.session_state:
-        st.session_state.datasource = None
-
+    
     st.sidebar.header('Advanced filters')
 
     reset_button = st.sidebar.button('Reset Filters')
@@ -114,20 +194,20 @@ def sidebar_setup():
     if reset_button:
         st.session_state.filters_reset = True
         st.session_state.search = ''
-        st.session_state.medium = []
-        st.session_state.years = (int(min(data['Year'])), int(max(data['Year'])))
+        st.session_state.culture = []
+        st.session_state.years = (min(data['Year'].astype(int)), max(data['Year'].astype(int)))
         st.session_state.datasource = None
         st.rerun()
 
     search = st.sidebar.text_input("🔍︎ Search by keyword: ", value=st.session_state.search)
 
-    medium_list = ['idk man', 'just trying my best', 'hope this works']
-    medium = st.sidebar.multiselect("Mediums: ", medium_list, 
-                                    default=st.session_state.medium)
+    culture_list = data["Culture"].unique().tolist()
+    culture = st.sidebar.multiselect("Culture: ", culture_list, 
+                                    default=st.session_state.culture)
 
     years = st.sidebar.slider('Time Period: ', 
-                              min_value = int(min(data['Year'])),
-                              max_value = int(max(data['Year'])),
+                              min_value = min(data['Year'].astype(int)),
+                              max_value = max(data['Year'].astype(int)),
                               value=st.session_state.years)
 
     datasource = st.sidebar.radio('Datasource: ', ['MET', 'Europeana'], 
@@ -147,10 +227,10 @@ def filter_data(data):
                                                                 case=False, na=False)
         data = data[mask]
 
-    if st.session_state.medium:
-        data = data[data['medium'].isin(st.session_state.medium)]
+    if st.session_state.culture:
+        data = data[data['Culture'].isin(st.session_state.culture)]
 
-    data = data[(data['year'] >= st.session_state.years[0]) & (data['year'] <= st.session_state.years[1])]
+    data = data[(data['Year'] >= st.session_state.years[0]) & (data['Year'] <= st.session_state.years[1])]
 
     if st.session_state.datasource == 'MET':
         data = data[data['datasource'] == 'MET']
@@ -168,14 +248,14 @@ def image_gallery(data):
     rows = n // 3
     # initialize iterator for row value
     i = 0
-
+    print(data)
     for row in range(rows):
         pics = st.columns([3,3,3], gap='medium', vertical_alignment='center')
         for pic in pics:
             with pic:
                 #splitting in case we want to add more to the caption
-                caption = data.iloc[i, 1]
-                st.image(data.iloc[i,-1], caption=caption)
+                # caption = data.iloc[i, '']
+                st.image(data.iloc[i,-2])
                 i += 1
 
     leftovers = n % 3
@@ -183,12 +263,10 @@ def image_gallery(data):
         lastrow = st.columns(leftovers, gap='medium', vertical_alignment='center')
         for j in range(leftovers):
             with lastrow[j]:
-                caption = data.iloc[i,1]
-                st.image(data.iloc[i,-1], caption=caption)
+                caption = data.iloc[i,-2]
+                st.image(data.iloc[i,-3], caption=caption)
                 i += 1
 
-data = image_processing_met(data)
 page_setup()
-# sidebar_setup() this little b*tch is having an issue with the years
-st.write(data)
-image_gallery(data)
+sidebar_setup()
+image_gallery(europeana_data)
