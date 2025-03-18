@@ -14,26 +14,32 @@ so that we do not have to load unnecessary data later on in our app.
 Classes
 ----------
     MetMuseum
+
+Functions
+----------
+    _request_image_urls: Requests image urls from the MET API
+    _run_full_pipeline: Runs the full pipeline
+    split_delimited: Splits delimited values into a list
+    clean_culture: Cleans culture column
+    replace_empty: Replaces empty values with 'Unknown'
+    process_data: Filters to only relevant columns and renames / cleans columns
+    filter_and_save: Filters the dataframe and saves it to a new csv file
+    main: Main function to run the pipeline
+
 References
 ----------
-    https://pawelmhm.github.io/asyncio/python/aiohttp/2016/04/22/asyncio-aiohttp.html
+    https://metmuseum.github.io/
+
 Authors
 ----------
     Madison Sanchez-Forman and Mya Strayer
 """
-import os 
-import random
+
 import re
-import time
-import asyncio
-import aiohttp
 
-import requests
-import pandas as pd 
-from tqdm import tqdm
-import numpy as np
+import pandas as pd
 
-from .async_utils import filter_images
+from .async_utils import filter_objects
 from .common_functions import print_example_rows, century_mapping
 
 
@@ -42,7 +48,7 @@ class MetMuseum:
     Class for quereying, manipulating, and saving data from the Metropolitan Museum of Art.
 
     This class contains the functionality for querying the MET API, cleaning results, and
-    saving the finalized version of the originally downloaded data. 
+    saving the finalized version of the originally downloaded data.
 
     Parameters
     ----------
@@ -57,11 +63,12 @@ class MetMuseum:
         dataframe of met objects.
     """
 
-    def __init__(self, file_path, is_test=False):
-        """ Initalizes class with given file path and optional test flag """
+    def __init__(self, file_path, run_full_pipeline=False):
+        """ Initalizes class with given file path """
         self.df = pd.read_csv(file_path, dtype='str')
-        if is_test:
-            self.df = self.df[:100]
+        # If has images is false, we need to run request pipeline
+        if run_full_pipeline:
+            self._run_full_pipeline(path='../data/MetObjects_final_filtered.csv', save_final=True)
 
     def _request_image_urls(self):
         """
@@ -73,95 +80,13 @@ class MetMuseum:
         pd.DataFrame
             dataframe of met objects with new image urls if they exist
         """
-        self.df = filter_images(self.df, 'MET')
+        self.df = filter_objects(self.df, 'MET')
         return self.df
 
-    def get_n_random_objs(self, n):
-        """
-        Returns sample of N random objects from dataframe
-        Parameters
-        ----------
-        n : int number of objects to return
-
-        Returns
-        -------
-        pd.DataFrame df of sample
-        """
-        return self.df.sample(n)
-
-    def split_delimited(self, cell):
-        if isinstance(cell, str) and '|' in cell:
-            items = [item.strip() for item in cell.split('|')]
-            return ", ".join(items)
-        return cell
-    
-    def clean_culture(self, culture):
-        ''' Gets rid of possibly / probably and splits at the comma '''
-        if not isinstance(culture, str):
-            return culture
-            
-        cleaned = re.sub(r'\b(?:probably|possibly)\b\s*', '', culture, flags=re.IGNORECASE)
-        cleaned = cleaned.split(',')[0].strip()
-        return cleaned
-
-    def replace_empty(self):
-        ''' Replaces unknown values with a string for the pop-up '''
-        for col in self.df.columns:
-            is_empty = (
-                self.df[col].isna() |
-                (self.df[col] == None) |
-                (self.df[col].astype(str).str.strip() == ''))
-
-            self.df.loc[is_empty, col] = f"{col} unknown"
-
-        return self.df
-    
-    def clean_title(self, title):
-        ''' Makes a cleaner title to print '''
-        if not isinstance(title, str):
-            return title
-
-        cleaned = re.sub(r'\([^)]*\)', '', title)
-        cleaned = re.sub(r'^\W+|\W+$', '', cleaned)
-        return cleaned.strip()
-        
-    def process_data(self):
-        """ Filters to only relevant columns and renames / cleans columns """
-        cols_to_keep = ['Object Number', 'Department', 'Title', 'Culture', 'Artist Display Name', 
-                        'Artist Display Bio', 'Object Begin Date', 'Medium',
-                        'Repository', 'Tags', 'image_url']
-
-        self.df = self.df[cols_to_keep]
-        # Change repository to MET
-        self.df['Repository'] = 'MET'
-        self.df['Description'] = "Description unknown"
-        self.df['Object Begin Date'] = self.df['Object Begin Date'].astype(int)
-
-        # Rename columns to be more readable
-        self.df.rename(columns = {'Artist Display Name' : 'Artist',
-                           'Artist Display Bio' : 'Artist biographic information',
-                           'Object Begin Date' : 'Year'}, inplace=True)
-        
-        # Split delimited values into a list
-        for col in self.df.columns:
-            self.df[col] = self.df[col].apply(self.split_delimited)
-
-        # Clean culture column
-        self.df['Culture'] = self.df['Culture'].apply(self.clean_culture)
-        
-        # Replace empty values with 'Uknown'
-        self.df = self.replace_empty()
-
-        # Clean title column
-        self.df['Title'].apply(self.clean_title)
-
-        # Create Century column
-        self.df['Century'] = self.df['Year'].apply(century_mapping)
-        return self.df
-        
-    def create_final_csv(self, path, save_final=False):
+    def _run_full_pipeline(self, path, save_final=False) -> None:
         """
         Runs the above functions to create the final MET data we will use later on.
+        This function is only used to aquire image urls at the very beginning of the pipeline
 
         Parameters
         ----------
@@ -175,22 +100,137 @@ class MetMuseum:
         if save_final:
             self.df.to_csv(path, index=False)
         print_example_rows(self.df, n=5)
-        return None
-    
-    def filter_and_save(self, filename):
+
+    def split_delimited(self, cell):
         """
-        Filters the dataframe and saves it to a new csv file.
+        Splits delimited values into a list
+        Parameters
+        ----------
+        cell : str
+            cell to split
+
+        Returns
+        -------
+        str of split values
+        """
+        if isinstance(cell, str) and '|' in cell:
+            items = [item.strip() for item in cell.split('|')]
+            return ", ".join(items)
+        return cell
+
+    def clean_culture(self, culture):
+        """
+        Cleans culture column
+        Parameters
+        ----------
+        culture : str
+            culture to clean
+
+        Returns
+        -------
+        str of cleaned culture 
+        """
+        cleaned = re.sub(r'\b(?:probably|possibly)\b\s*', '', culture, flags=re.IGNORECASE)
+        cleaned = cleaned.split(',')[0].strip()
+        return cleaned
+
+    def replace_empty(self):
+        """
+        Replaces empty values with 'Unknown'
+        Parameters
+        ----------
+        df : pd.DataFrame
+            dataframe to replace empty values in
+
+        Returns
+        -------
+        pd.DataFrame with empty values replaced with 'Unknown'
+        """
+        for col in self.df.columns:
+            is_empty = (
+                self.df[col].isna() |
+                (self.df[col] is None) |
+                (self.df[col].astype(str).str.strip() == ''))
+
+            self.df.loc[is_empty, col] = f"{col} unknown"
+
+        return self.df
+
+    def clean_title(self, title):
+        """
+        Cleans title column
+        Parameters
+        ----------
+        title : str
+            title to clean
+
+        Returns
+        -------
+        str of cleaned title
+        """
+        cleaned = re.sub(r'\([^)]*\)', '', title)
+        cleaned = re.sub(r'^\W+|\W+$', '', cleaned)
+        return cleaned.strip()
+
+    def process_data(self):
+        """
+        Filters to only relevant columns and renames / cleans columns
+        Returns
+        -------
+        pd.DataFrame with relevant columns
+        """
+        cols_to_keep = ['Object Number', 'Department', 'Title', 'Culture', 'Artist Display Name',
+                        'Artist Display Bio', 'Object Begin Date', 'Medium',
+                        'Repository', 'Tags', 'image_url']
+
+        self.df = self.df[cols_to_keep]
+        # Change repository to MET
+        self.df['Repository'] = 'MET'
+
+        self.df['Description'] = "Description unknown"
+        self.df['Object Begin Date'] = self.df['Object Begin Date'].astype(int)
+
+        # Rename columns to be more readable
+        self.df.rename(columns = {'Artist Display Name' : 'Artist',
+                           'Artist Display Bio' : 'Artist biographic information',
+                           'Object Begin Date' : 'Year'}, inplace=True)
+
+        # Split delimited values into a list
+        for col in self.df.columns:
+            self.df[col] = self.df[col].apply(self.split_delimited)
+
+        # Clean culture column
+        self.df['Culture'] = self.df['Culture'].apply(self.clean_culture)
+
+        # Replace empty values with 'Uknown'
+        self.df = self.replace_empty()
+
+        # Clean title column
+        self.df['Title'].apply(self.clean_title)
+
+        # Create Century column
+        self.df['Century'] = self.df['Year'].apply(century_mapping)
+        return self.df
+
+    def filter_and_save(self, path) -> None:
+        """
+        Filters the dataframe and saves it to a new csv file. assumes we already have image urls.
+
+        Parameters
+        ----------
+        path : str
+            path to save the final dataframe
         """
         self.df = self.process_data()
-        self.df.to_csv(filename, index=False)
-        
-        
+        print_example_rows(self.df, n=1)
+        self.df.to_csv(path, index=False)
+
 def main():
     """
-    Instantiate MetMuseum class with original file, query, filter, save.
+    Main function to run the pipeline
     """
-    met = MetMuseum('data/MetObjects_final.csv', is_test=True)
-    met.create_final_csv(path='data/MetObjects_final_filteredII.csv', save_final=True)
+    met = MetMuseum('../data/MetObjects_final.csv')
+    met.filter_and_save(path='../data/MetObjects_final_filtered.csv')
     print(f"Length of final filtered dataframe: {len(met.df)}")
 
 if __name__ == "__main__":
