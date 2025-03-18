@@ -25,7 +25,6 @@ Authors
     Madison Sanchez-Forman and Mya Strayer
 """
 import re
-import os
 
 from dotenv import load_dotenv
 
@@ -33,8 +32,8 @@ from pyeuropeana import utils
 from pyeuropeana import apis
 import pandas as pd
 
-from async_utils import filter_objects
-from common_functions import print_example_rows, century_mapping
+from .async_utils import filter_objects
+from .common_functions import print_example_rows, century_mapping
 
 class Europeana:
     """
@@ -195,8 +194,10 @@ class Europeana:
         return self.df
 
 def main():
-    # access_key = os.getenv('API_KEY')
-    europeana = Europeana()
+    """
+    Main function to run the aquisition pipeline
+    """
+    Europeana()
 
 if __name__ == "__main__":
     main()

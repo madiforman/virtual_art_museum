@@ -1,13 +1,55 @@
 
-import asyncio
-import aiohttp
-import requests
+"""
+This module perfoms the largest data aquisition task of the project.
+
+It is responsible for fetching the image urls from the source and filtering
+out any objects that do not have a valid image url. This process is slightly different
+for the MET and Europeana sources, however this script is designed to handle both
+
+References
+----------
+    https://pawelmhm.github.io/asyncio/python/aiohttp/2016/04/22/asyncio-aiohttp.html
+    https://pro.europeana.eu/page/apis
+    https://github.com/europeana/rd-europeana-python-api
+
+Functions
+----------
+    check_dropbox_content: Checks if dropbox content is an image 
+    check_europeana_response: Checks if europeana response is a valid image url
+    fetch: Fetches the image url from the source
+    bound_fetch: Fetches the image url from the source with rate limiting
+    run: Runs the fetch function on the dataframe
+    filter_objects: Filters the dataframe based on the source
+
+Authors
+----------
+    Madison Sanchez-Forman and Mya Strayer
+"""
 import time
 
-import pandas as pd 
+import asyncio
+import aiohttp
+
 from tqdm.asyncio import tqdm_asyncio
 
 def check_dropbox_content(content: bytes):
+    """
+    Checks if the first 9 bytes of content from Europeana is a valid image url.
+
+    In the Europeana API, some links are to a dropbox page. This can return status 200,
+    even though it is just linking you to a bad dropbox page. This function checks if the first
+    9 bytes of content are the html code for a dropbox page. If they are, it returns False,
+    indicating that the url is not a valid image url. It assumes that if it is not html code,
+    then it will be hexcode. I am doubtful that this is a safe assumption always.
+
+    Parameters
+    ----------
+    content (bytes): The first 9 bytes of content from Europeana image_url
+
+    Returns
+    -------
+    bool: True if the url is a valid image url, False otherwise
+    """
     content = content[:9]
     if content == b'<!DOCTYPE': # if it is a valid dropbox url it will return hexxcode, not html
         print("Found invalid dropbox url.")
