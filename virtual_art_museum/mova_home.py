@@ -206,5 +206,6 @@ def main():
     # sidebar_setup(data)
     image_gallery(data.sample(n=100))
 
+
 if __name__ == "__main__":
     main()
