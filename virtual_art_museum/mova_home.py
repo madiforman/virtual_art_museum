@@ -22,182 +22,56 @@ import re
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
-MET_PATH = os.path.join(base_dir, "data", "MetObjects_final_filtered.csv")
-EUROPEANA_PATH = os.path.join(base_dir, "data", "Europeana_data.csv")
+MET_PATH = os.path.join(base_dir, "data", "MetObjects_final_filtered_processed.csv")
+EUROPEANA_PATH = os.path.join(base_dir, "data", "Europeana_data_processed.csv")
+BLENDED_PATH = os.path.join(base_dir, "data", "blended_data.csv")
 
-met = pd.read_csv(MET_PATH)
-data = pd.read_csv(EUROPEANA_PATH)
-
-def image_processing_europeana(data):
+@st.cache_data # Caches the result so it doesn't reload every time Streamlit reruns
+def load_blended_cached(path: str, sample_size: int = 10000) -> pd.DataFrame:
     """
-    Transforms the Europeana data to be 
-    compatible with MET merge.
-    - Reads through the description column
-        and tries to match for any Mediums
-        or Tags (based on MET)
-    - Updates country column to match any
-        culture within the MET data
-    - Makes a fake column for Artist Bio
-    - Replaces 'Unknown' in year column
-        with unrealistic value
-    - Renames columns to match MET's
+    Loads stratified sample of data with repository proportions assuming 80% MET and 20% Europeana.
+
+    Parameters:
+        path (str): Path to the data file
+        sample_size (int): Number of rows to sample
+    ----------
+    Returns:
+        pd.DataFrame: A dataframe containing the sampled data
     """
-    data['Medium'] = "Medium unknown"
-    data['Tags'] = "Tags unknown"
-    data['repository'] = "Europeana"
+    try:
+        repo_proportions = {
+            'MET': 0.8,        # Assuming 80% of data is MET
+            'Europeana': 0.2   # Assuming 20% is Europeana
+        }
+        # # samples per repository
+        samples_per_repo = {
+            repo: int(sample_size * prop)
+            for repo, prop in repo_proportions.items()
+        }
+        # Sample from each repository
+        samples = [
+            pd.read_csv(path).query(f"Repository == '{repo}'").sample(n=count, random_state=42)
+            for repo, count in samples_per_repo.items()
+        ]
+        # Combine and shuffle
+        final_df = pd.concat(samples, ignore_index=True).sample(frac=1, random_state=42)
+        print(f"Loaded {len(final_df)} rows\n{final_df['Repository'].value_counts()}")
+        return final_df
+    except Exception as e:
+        st.error(f"Error loading data: {str(e)}")
+        return pd.DataFrame()
 
-    tags = met['Tags'].str.split(',').explode().unique()
-    cultures = met['Culture'].str.split(',').explode().unique()
-    
-    def find_tags(description):
-        ''' Searches through the description
-        column, finding any Tag matches '''
-        tags_match = []
-        
-        if description == 'Unknown' or str(description).startswith('warning:'):
-            return "Description unknown"
-
-        description = str(description).lower()
-        
-        for tag in tags:
-            if tag.lower() in description:
-                tags_match.append(tag)
-
-        return description
-
-    data['description'] = data['description'].apply(find_tags)
-
-    for idx, row in data.iterrows():
-        description = str(row['description']).lower()
-
-        tags_match = [tag for tag in tags if tag and tag.lower() in description]
-        if tags_match:
-            data.at[idx, 'Tags'] = ", ".join(tags_match)
-
-    country_to_culture = {
-        'United Kingdom': 'British',
-        'England': 'British',
-        'Scotland': 'British',
-        'Wales': 'British',
-        'Ireland': 'Irish',
-        'France': 'French',
-        'Germany': 'German',
-        'Italy': 'Italian',
-        'Spain': 'Spanish',
-        'Portugal': 'Portuguese',
-        'Netherlands': 'Dutch',
-        'Belgium': 'Belgian',
-        'Switzerland': 'Swiss',
-        'Austria': 'Austrian',
-        'Greece': 'Greek',
-        'Denmark': 'Danish',
-        'Sweden': 'Swedish',
-        'Norway': 'Norwegian',
-        'Finland': 'Finnish',
-        'Russia': 'Russian',
-        'Poland': 'Polish',
-        'Hungary': 'Hungarian',
-        'Czech Republic': 'Czech',
-        'Romania': 'Romanian',
-        'Bulgaria': 'Bulgarian',
-        'Turkey': 'Turkish'}
-
-    for culture in cultures:
-        country_match = None
-        culture = str(culture).strip()
-
-        # Remove suffixes to check for match
-        if culture.endswith('ish'):
-            country_match = culture[:-3]
-        elif culture.endswith('ese'):
-            country_match = culture[:-3]
-        elif culture.endswith('ian'):
-            country_match = culture[:-3]
-        elif culture.endswith('ch'):
-            country_match = culture[:-2] + 'ce'
-        elif culture.endswith('ish'):
-            country_match = culture[:-3]
-
-        if country_match and country_match not in country_to_culture.values():
-            country_to_culture[country_match] = culture
-
-    def map_countries_to_culture(country):
-        ''' Maps countries to respective cultures '''
-        if pd.isna(country) or country == 'Unknown':
-            return 'Culture unknown'
-
-        country = str(country).strip()
-
-        if country in country_to_culture:
-            return country_to_culture[country]
-
-        for known_country, culture in country_to_culture.items():
-            if known_country in country:
-                return culture
-
-        for culture in cultures:
-            culture_lower = culture.lower()
-            country_lower = country.lower()
-            if culture_lower in country_lower:
-                return culture
-        
-        return 'Culture unknown'
-
-    data['Culture'] = data['country'].apply(map_countries_to_culture)
-
-    def clean_title(title):
-        ''' Makes a cleaner title to print '''
-        if not isinstance(title, str):
-            return title
-
-        comma = title.find(',')
-        period = title.find('.')
-
-        if comma == -1 and period == -1:
-            return title
-        elif comma == -1:
-            return title[:period].strip()
-        elif period == -1:
-            return title[:comma].strip()
-        else:
-            endpoint = min(idx for idx in [comma, period] if idx >= 0)
-            return title[:endpoint].strip()
-
-    data['title'] = data['title'].apply(clean_title)
-
-    def clean_creator(artist):
-        if pd.isna(artist) or artist == 'Unknown' or str(artist).startswith('http://'):
-            return "Artist unknown"
-        return artist  
-
-    data['creator'] = data['creator'].apply(clean_creator)
-
-    data['Artist biographic information'] = "Artist biographic information unknown"
-    data['Dimensions'] = "Dimensions unknown"
-    data['year'] = data['year'].replace('Unknown', 9999).astype(int)
-
-    data = data.rename(columns = {'europeana_id' : 'Object Number',
-                                  'title' : 'Title',
-                                  'creator' : 'Artist',
-                                  'description' : 'Description',
-                                  'provider' : 'Department',
-                                  'year' : 'Year',
-                                  'repository' : 'Repository'})
-    data = data.drop(columns=['country'])
-        
-    return data
-
-def blend_datasources(met_data, europeana_data):
-    """
-    Takes the pre-processed MET and Europeana datasets,
-    ensures they follow the same format, randomly 
-    combines them, and orders them according to height.
-    For odd number rows, tallest photo should be in the center;
-    for even number rows, shortest photo is centered.
-    """
-    combined = pd.concat([met_data, europeana_data], ignore_index=True)
-    combined = combined.sample(frac=1).reset_index(drop=True)
-    return combined
+# def blend_datasources(met_data, europeana_data):
+#     """
+#     Takes the pre-processed MET and Europeana datasets,
+#     ensures they follow the same format, randomly 
+#     combines them, and orders them according to height.
+#     For odd number rows, tallest photo should be in the center;
+#     for even number rows, shortest photo is centered.
+#     """
+#     combined = pd.concat([met_data, europeana_data], ignore_index=True)
+#     combined = combined.sample(frac=1).reset_index(drop=True)
+#     return combined
 
 def page_setup():
     """ Page configuation """
@@ -240,7 +114,7 @@ def page_setup():
     st.markdown("#")  
     st.markdown("#")
 
-def sidebar_setup():
+def sidebar_setup(data):
     """ Sidebar configuration """
     
     st.sidebar.header('Advanced filters')
@@ -304,14 +178,16 @@ def image_gallery(data):
     rows = n // 3
     # initialize iterator for row value
     i = 0
-    print(data)
+    image_index = data.columns.tolist().index('image_url')
+    title_index = data.columns.tolist().index('Title')
+
     for row in range(rows):
         pics = st.columns([3,3,3], gap='medium', vertical_alignment='center')
         for pic in pics:
             with pic:
                 #splitting in case we want to add more to the caption
-                caption = data.iloc[i, 1]
-                st.image(data.iloc[i,-4])
+                caption = data.iloc[i, title_index]
+                st.image(data.iloc[i, image_index], caption=caption)
                 i += 1
 
     leftovers = n % 3
@@ -319,12 +195,16 @@ def image_gallery(data):
         lastrow = st.columns(leftovers, gap='medium', vertical_alignment='center')
         for j in range(leftovers):
             with lastrow[j]:
-                caption = data.iloc[i,1]
-                st.image(data.iloc[i,-4], caption=caption)
+                caption = data.iloc[i, title_index]
+                st.image(data.iloc[i, image_index], caption=caption)
                 i += 1
 
-data = image_processing_europeana(data)
-combined = blend_datasources(met, data)
-page_setup()
-#sidebar_setup()
-image_gallery(combined)
+def main():
+    page_setup()
+    print("Loading data")
+    data = load_blended_cached(BLENDED_PATH)
+    # sidebar_setup(data)
+    image_gallery(data.sample(n=100))
+
+if __name__ == "__main__":
+    main()

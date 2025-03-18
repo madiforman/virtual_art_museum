@@ -7,7 +7,7 @@ import pandas as pd
 from tqdm.asyncio import tqdm_asyncio
 
 def check_dropbox_content(content: bytes):
-    # content = content[:9]
+    content = content[:9]
     if content == b'<!DOCTYPE': # if it is a valid dropbox url it will return hexxcode, not html
         print("Found invalid dropbox url.")
         return False
