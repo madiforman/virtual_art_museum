@@ -28,7 +28,7 @@ Functions
 
 References
 ----------
-    https://metmuseum.github.io/
+    https://github.com/metmuseum/openaccess
 
 Authors
 ----------

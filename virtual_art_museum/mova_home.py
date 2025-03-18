@@ -60,19 +60,7 @@ def load_blended_cached(path: str, sample_size: int = 10000) -> pd.DataFrame:
     except Exception as e:
         st.error(f"Error loading data: {str(e)}")
         return pd.DataFrame()
-
-# def blend_datasources(met_data, europeana_data):
-#     """
-#     Takes the pre-processed MET and Europeana datasets,
-#     ensures they follow the same format, randomly 
-#     combines them, and orders them according to height.
-#     For odd number rows, tallest photo should be in the center;
-#     for even number rows, shortest photo is centered.
-#     """
-#     combined = pd.concat([met_data, europeana_data], ignore_index=True)
-#     combined = combined.sample(frac=1).reset_index(drop=True)
-#     return combined
-
+        
 def page_setup():
     """ Page configuation """
     st.set_page_config(
