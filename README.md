@@ -1,3 +1,6 @@
+![workflow]
+(https://github.com/madiforman/virtual_art_museum/blob/main/.github/workflows/build_test.yml/badge.svg)
+
 # Museum of Virtual Art (MoVA)
 Project Type: Data Presentation Project
 

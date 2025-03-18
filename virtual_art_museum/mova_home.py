@@ -22,30 +22,46 @@ import re
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
-MET_PATH = os.path.join(base_dir, "data", "MetObjects_final_filtered.csv")
-EUROPEANA_PATH = os.path.join(base_dir, "data", "Europeana_data.csv")
+MET_PATH = os.path.join(base_dir, "data", "MetObjects_final_filtered_processed.csv")
+EUROPEANA_PATH = os.path.join(base_dir, "data", "Europeana_data_processed.csv")
+BLENDED_PATH = os.path.join(base_dir, "data", "blended_data.csv")
 
-met = pd.read_csv(MET_PATH)
-data = pd.read_csv(EUROPEANA_PATH)
-
-def image_processing_europeana(data):
+@st.cache_data # Caches the result so it doesn't reload every time Streamlit reruns
+def load_blended_cached(path: str, sample_size: int = 10000) -> pd.DataFrame:
     """
-    Transforms the Europeana data to be 
-    compatible with MET merge.
-    - Reads through the description column
-        and tries to match for any Mediums
-        or Tags (based on MET)
-    - Updates country column to match any
-        culture within the MET data
-    - Makes a fake column for Artist Bio
-    - Replaces 'Unknown' in year column
-        with unrealistic value
-    - Renames columns to match MET's
-    """
-    data['Medium'] = "Medium unknown"
-    data['Tags'] = "Tags unknown"
-    data['repository'] = "Europeana"
+    Loads stratified sample of data with repository proportions assuming 80% MET and 20% Europeana.
 
+    Parameters:
+        path (str): Path to the data file
+        sample_size (int): Number of rows to sample
+    ----------
+    Returns:
+        pd.DataFrame: A dataframe containing the sampled data
+    """
+    try:
+        repo_proportions = {
+            'MET': 0.8,        # Assuming 80% of data is MET
+            'Europeana': 0.2   # Assuming 20% is Europeana
+        }
+        # # samples per repository
+        samples_per_repo = {
+            repo: int(sample_size * prop)
+            for repo, prop in repo_proportions.items()
+        }
+        # Sample from each repository
+        samples = [
+            pd.read_csv(path).query(f"Repository == '{repo}'").sample(n=count, random_state=42)
+            for repo, count in samples_per_repo.items()
+        ]
+        # Combine and shuffle
+        final_df = pd.concat(samples, ignore_index=True).sample(frac=1, random_state=42)
+        print(f"Loaded {len(final_df)} rows\n{final_df['Repository'].value_counts()}")
+        return final_df
+    except Exception as e:
+        st.error(f"Error loading data: {str(e)}")
+        return pd.DataFrame()
+
+<<<<<<< HEAD
     tags = met['Tags'].str.split(',').explode().unique()
     cultures = met['Culture'].str.split(',').explode().unique()
     
@@ -199,6 +215,19 @@ def blend_datasources(met_data, europeana_data):
     combined = combined.sample(frac=1).reset_index(drop=True)
     combined = combined.head(100)
     return combined
+=======
+# def blend_datasources(met_data, europeana_data):
+#     """
+#     Takes the pre-processed MET and Europeana datasets,
+#     ensures they follow the same format, randomly 
+#     combines them, and orders them according to height.
+#     For odd number rows, tallest photo should be in the center;
+#     for even number rows, shortest photo is centered.
+#     """
+#     combined = pd.concat([met_data, europeana_data], ignore_index=True)
+#     combined = combined.sample(frac=1).reset_index(drop=True)
+#     return combined
+>>>>>>> c464606ebeb754aa6f6c8df390460f5a10cf3ced
 
 def initialize_session_state(data):
     ''' Initialze session state variables '''
@@ -231,6 +260,7 @@ def update_datasource(value):
     ''' Updates datasource radio '''
     st.session_state.datasource = value
     
+<<<<<<< HEAD
 def reset_filters(data):
     ''' Resets all filters to default values '''
     st.session_state.filters_reset = True
@@ -240,6 +270,40 @@ def reset_filters(data):
     st.session_state.datasource = None
     st.session_state.filtered_data = data.copy()
     st.rerun()
+=======
+    st.markdown("#")  
+    st.markdown("#")
+
+def sidebar_setup(data):
+    """ Sidebar configuration """
+    
+    st.sidebar.header('Advanced filters')
+
+    reset_button = st.sidebar.button('Reset Filters')
+    # reset filters when clicked
+    if reset_button:
+        st.session_state.filters_reset = True
+        st.session_state.search = ''
+        st.session_state.culture = []
+        st.session_state.years = (min(data['Year'].astype(int)), max(data['Year'].astype(int)))
+        st.session_state.datasource = None
+        st.rerun()
+
+    search = st.sidebar.text_input("🔍︎ Search by keyword: ", value=st.session_state.search)
+
+    culture_list = data["Culture"].unique().tolist()
+    culture = st.sidebar.multiselect("Culture: ", culture_list, 
+                                    default=st.session_state.culture)
+
+    years = st.sidebar.slider('Time Period: ', 
+                              min_value = min(data['Year'].astype(int)),
+                              max_value = max(data['Year'].astype(int)),
+                              value=st.session_state.years)
+
+    datasource = st.sidebar.radio('Datasource: ', ['MET', 'Europeana'], 
+                                  index=None if st.session_state.get('datasource', None) is None 
+                                  else ['MET', 'Europeana'].index(st.session_state.datasource)) 
+>>>>>>> c464606ebeb754aa6f6c8df390460f5a10cf3ced
 
 def filter_data(data):
     """ Filters the dataframe based on user inputs """
@@ -338,13 +402,24 @@ def image_gallery(data):
     rows = n // 3
     # initialize iterator for row value
     i = 0
+<<<<<<< HEAD
+=======
+    image_index = data.columns.tolist().index('image_url')
+    title_index = data.columns.tolist().index('Title')
+
+>>>>>>> c464606ebeb754aa6f6c8df390460f5a10cf3ced
     for row in range(rows):
         pics = st.columns([3,3,3], gap='medium', vertical_alignment='center')
         for pic in pics:
             with pic:
                 #splitting in case we want to add more to the caption
+<<<<<<< HEAD
                 caption = data.iloc[i, 1]
                 st.image(data.iloc[i,-4], caption=caption)
+=======
+                caption = data.iloc[i, title_index]
+                st.image(data.iloc[i, image_index], caption=caption)
+>>>>>>> c464606ebeb754aa6f6c8df390460f5a10cf3ced
                 i += 1
 
     leftovers = n % 3
@@ -352,12 +427,24 @@ def image_gallery(data):
         lastrow = st.columns(leftovers, gap='medium', vertical_alignment='center')
         for j in range(leftovers):
             with lastrow[j]:
-                caption = data.iloc[i,1]
-                st.image(data.iloc[i,-4], caption=caption)
+                caption = data.iloc[i, title_index]
+                st.image(data.iloc[i, image_index], caption=caption)
                 i += 1
 
+<<<<<<< HEAD
 data = image_processing_europeana(data)
 combined = blend_datasources(met, data)
 homepage(combined)
 st.write(combined)
 #image_gallery(combined)
+=======
+def main():
+    page_setup()
+    print("Loading data")
+    data = load_blended_cached(BLENDED_PATH)
+    # sidebar_setup(data)
+    image_gallery(data.sample(n=100))
+
+if __name__ == "__main__":
+    main()
+>>>>>>> c464606ebeb754aa6f6c8df390460f5a10cf3ced
