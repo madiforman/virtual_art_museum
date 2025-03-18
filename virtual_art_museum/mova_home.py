@@ -27,7 +27,7 @@ EUROPEANA_PATH = os.path.join(base_dir, "data", "Europeana_data_processed.csv")
 BLENDED_PATH = os.path.join(base_dir, "data", "blended_data.csv")
 
 @st.cache_data # Caches the result so it doesn't reload every time Streamlit reruns
-def load_data_cached(path: str, sample_size: int = 5000) -> pd.DataFrame:
+def load_blended_cached(path: str, sample_size: int = 10000) -> pd.DataFrame:
     """
     Loads stratified sample of data with repository proportions assuming 80% MET and 20% Europeana.
 
@@ -178,14 +178,16 @@ def image_gallery(data):
     rows = n // 3
     # initialize iterator for row value
     i = 0
-    print(data)
+    image_index = data.columns.tolist().index('image_url')
+    title_index = data.columns.tolist().index('Title')
+
     for row in range(rows):
         pics = st.columns([3,3,3], gap='medium', vertical_alignment='center')
         for pic in pics:
             with pic:
                 #splitting in case we want to add more to the caption
-                caption = data.iloc[i, 1]
-                st.image(data.iloc[i,-4])
+                caption = data.iloc[i, title_index]
+                st.image(data.iloc[i, image_index], caption=caption)
                 i += 1
 
     leftovers = n % 3
@@ -193,14 +195,14 @@ def image_gallery(data):
         lastrow = st.columns(leftovers, gap='medium', vertical_alignment='center')
         for j in range(leftovers):
             with lastrow[j]:
-                caption = data.iloc[i,1]
-                st.image(data.iloc[i,-4], caption=caption)
+                caption = data.iloc[i, title_index]
+                st.image(data.iloc[i, image_index], caption=caption)
                 i += 1
 
 def main():
     page_setup()
     print("Loading data")
-    data = load_data_cached(BLENDED_PATH)
+    data = load_blended_cached(BLENDED_PATH)
     # sidebar_setup(data)
     image_gallery(data.sample(n=100))
 
