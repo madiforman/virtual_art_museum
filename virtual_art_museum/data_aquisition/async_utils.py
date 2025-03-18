@@ -1,3 +1,4 @@
+
 import asyncio
 import aiohttp
 import requests
@@ -113,5 +114,5 @@ async def run(df, flag: str):
 
     return filtered_df
 
-def filter_images(df, flag: str):
+def filter_objects(df, flag: str):
     return asyncio.run(run(df, flag))

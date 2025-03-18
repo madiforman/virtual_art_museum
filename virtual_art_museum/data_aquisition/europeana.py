@@ -10,79 +10,89 @@ of common "art terms" to query this data base for. This is found in the
 directory: data/query_terms.csv
 We query all these terms and save as much data back as possible. In the future,
 we would love to add to this dataset.
-Number of unique objects in resultultu
-eul
+Number of unique objects in result: ~4,000
+
 Classes
 ----------
     Europeana
+
 References
 ----------
-    
+    https://europeana.eu/api/
+
 Authors
 ----------
     Madison Sanchez-Forman and Mya Strayer
 """
-import math
-import requests
-import random
 import re
-import asyncio
-import aiohttp
 import os
 
-# from dotenv import load_dotenv
+from dotenv import load_dotenv
 
-import pyeuropeana.utils as utils
-import pyeuropeana.apis as apis
+from pyeuropeana import utils
+from pyeuropeana import apis
 import pandas as pd
-from tqdm import tqdm
 
-from .async_utils import filter_images
-from .common_functions import print_example_rows, century_mapping
+from async_utils import filter_objects
+from common_functions import print_example_rows, century_mapping
 
 class Europeana:
     """
-    Class docstring.
+    Class for quereying, manipulating, and saving data from the Europeana API.
+
+    This class contains the functionality for querying the Europeana API, 
+    cleaning results, and saving the finalized version of the originally 
+    downloaded data.
+
+    Parameters
+    ----------
+    file_path : str
+        path to Europeana objects file. Can either be the unfiltered or filtered version.
 
     Attributes:
-        df (pd.DataFrame): [description]
-    """
-    def __init__(self, file_path: str):
-        self.df = pd.DataFrame()
-        if file_path == "":
-            self.df = self.create_final(path="", save_final=False)
-        else:
-           self.df = pd.read_csv(file_path, dtype='str')
+    ----------
+    df (pd.DataFrame):
+        dataframe of Europeana objects.
 
-    def get_n_random_objs(self, n=10):
-        return self.df.sample(n)
-    
+    """
+    def __init__(self, save_final=False):
+        """ Initalalizes class with empty dataframe """
+        self.df = pd.DataFrame()
+        self.df = self.create_final(path="Europeana_data_test.csv", save_final=save_final)
+
+
     def bulk_requests(self):
         """
-        Function docstring.
+        Queries the Europeana API for each query term in query_terms.csv
+        Saves the results to a dataframe and filters out any objects without images.
+
+        This function interates through each query term in query_terms.csv,
+        and queries the Europeana API for each term. It then saves the results
+        to a dataframe and filters out any objects without images.
 
         Returns:
-            pd.DataFrame: [description]
+        --------
+            pd.DataFrame: dataframe of Europeana objects.
         """
         query_terms = pd.read_csv('../data/query_terms.csv', header=None)
         query_terms = set(query_terms.iloc[:, 0].tolist())
-        df_list = []
+        # df_list = []
         for query in query_terms:
             cursor = '*'  # Initial cursor value
             total_results = 0
             max_results = 500 # Set a maximum number of results per query
-            
-            while cursor and total_results < max_results: 
+
+            while cursor and total_results < max_results:
                 response = apis.search(
                     query=query,
                     reusability = 'open AND permission', # ensure rights to use the data
                     cursor=cursor, # pass the cursor to the next page
-                    qf='LANGUAGE:en AND TYPE:IMAGE', 
+                    qf='LANGUAGE:en AND TYPE:IMAGE',
                     rows=max_results  # Maximum allowed per request
                 )
                 if not response.get('items'): # if no results, break
                     break
-
+                # convert the response to a dataframe
                 df_new = utils.search2df(response)
                 self.df = pd.concat([self.df, df_new], ignore_index=True)
 
@@ -90,31 +100,35 @@ class Europeana:
                 total_results += len(response.get('items', []))
                 print(f"Fetched {total_results} results for query: {query}")
 
-        self.df = self.df.dropna(subset=['image_url'])
-        self.df = self.df.drop_duplicates(subset=['image_url'])
-        self.df = filter_images(self.df, flag="EUROPEANA")
+        self.df = self.df.dropna(subset=['image_url']) # drop any objects without images
+        self.df = self.df.drop_duplicates(subset=['image_url']) # drop any duplicate images
+        self.df = filter_objects(self.df, flag="EUROPEANA") # filter out any objects without images
 
         print(f"Found {len(self.df)} valid image urls")
         return self.df
 
     def _extract_year(self, row:pd.Series):
         """
-        Function docstring.
+        Extracts the year from the description, title, or creator of an object.
 
-        Args:
-            row (pd.Series): [description]
+        Parameters
+        ----------
+            row (pd.Series): row of dataframe
 
         Returns:
-            int: [description]
+        --------
+            int: year of object
         """
         date_pattern = r'\d{4}' # regex pattern YYYY
+        # search for the year in the description, title, or creator
         match_description = re.search(date_pattern, str(row['description']))
         match_title = re.search(date_pattern, str(row['title']))
         match_creator = re.search(date_pattern, str(row['creator']))
 
+        # if the year is found, return the year
         if match_description:
             date = match_description.group()
-        elif match_title:   
+        elif match_title:
             date = match_title.group()
         elif match_creator:
             date = match_creator.group()
@@ -124,27 +138,27 @@ class Europeana:
 
     def _create_year_column(self):
         """
-        Function docstring.
-
+        Creates a year column in the dataframe by searching data for year
         Returns:
-            pd.DataFrame: [description]
+        --------
+            pd.DataFrame: dataframe of Europeana objects.
         """
-        date_pattern = r'\d{4}(-\d{4})?' # regex pattern YYYY or YYYY-YYYY
         self.df['year'] = self.df.apply(self._extract_year, axis=1).astype(int)
         return self.df
 
     def process_data(self):
         """
-        Function docstring.
+        Processes the dataframe by filling missing values, keeping relevant columns,
+        and creating a year column.
 
         Returns:
-            pd.DataFrame: [description]
+        --------
+            pd.DataFrame: dataframe of Europeana objects.
         """
-        # Fill missing values with 'Unknown'
-        self.df.fillna('Unknown', inplace=True)
+        self.df.fillna('Unknown', inplace=True) # fill missing values with 'Unknown'
 
         # Keep relevant columns
-        cols_to_keep = ['europeana_id', 'image_url', 
+        cols_to_keep = ['europeana_id', 'image_url',
                         'title', 'creator', 
                         'description', 'country', 'provider']
         self.df = self.df[cols_to_keep]
@@ -162,14 +176,16 @@ class Europeana:
 
     def create_final(self, path, save_final=False):
         """
-        Function docstring.
+        Creates a final dataframe by running the bulk requests and processing the data.
 
-        Args:
-            path (str): [description]
-            save_final (bool, optional): [description]. Defaults to False.
+        Parameters
+        ----------
+            path (str): path to save the final dataframe
+            save_final (bool, optional): whether to save the final dataframe. Defaults to False.
 
         Returns:
-            None
+        --------
+            pd.DataFrame: dataframe of Europeana objects.
         """
         self.df = self.bulk_requests()
         self.df = self.process_data()
@@ -179,10 +195,8 @@ class Europeana:
         return self.df
 
 def main():
-    access_key = os.getenv('API_KEY')
-    # os.environ['EUROPEANA_API_KEY'] = access_key
-    europeana = Europeana(file_path='')
+    # access_key = os.getenv('API_KEY')
+    europeana = Europeana()
 
 if __name__ == "__main__":
     main()
-

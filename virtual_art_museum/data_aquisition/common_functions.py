@@ -212,7 +212,7 @@ def reorder_columns(df1, df2):
 def main():
     met = pd.read_csv('../data/MetObjects_final_filtered_processed.csv')
     europeana = pd.read_csv('../data/Europeana_data_processed.csv')
-    met, europeana = reorder_columns(met, europeana)
+    met, europeana = reorder_columns(met, europeana) 
 
     print_example_rows(met, n=1)
     print_example_rows(europeana, n=1)
