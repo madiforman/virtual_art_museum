@@ -22,11 +22,12 @@ import re
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
-MET_PATH = os.path.join(base_dir, "data", "MetObjects_final_filtered_processed.csv")
-EUROPEANA_PATH = os.path.join(base_dir, "data", "Europeana_data_processed.csv")
+#MET_PATH = os.path.join(base_dir, "data", "MetObjects_final_filtered_processed.csv")
+#EUROPEANA_PATH = os.path.join(base_dir, "data", "Europeana_data_processed.csv")
 BLENDED_PATH = os.path.join(base_dir, "data", "blended_data.csv")
 
-@st.cache_data # Caches the result so it doesn't reload every time Streamlit reruns
+ # Caches the result so it doesn't reload every time Streamlit reruns
+@st.cache_data
 def load_blended_cached(path: str, sample_size: int = 10000) -> pd.DataFrame:
     """
     Loads stratified sample of data with repository proportions assuming 80% MET and 20% Europeana.
@@ -55,107 +56,77 @@ def load_blended_cached(path: str, sample_size: int = 10000) -> pd.DataFrame:
         ]
         # Combine and shuffle
         final_df = pd.concat(samples, ignore_index=True).sample(frac=1, random_state=42)
-        print(f"Loaded {len(final_df)} rows\n{final_df['Repository'].value_counts()}")
+        #print(f"Loaded {len(final_df)} rows\n{final_df['Repository'].value_counts()}")
         return final_df
     except Exception as e:
         st.error(f"Error loading data: {str(e)}")
         return pd.DataFrame()
-        
-def page_setup():
-    """ Page configuation """
-    st.set_page_config(
-        page_title="MoVA",
-        layout="wide",
-        initial_sidebar_state="collapsed"
-    )
 
-    if 'filters_reset' not in st.session_state:
-        st.session_state.filters_reset = False
+def initialize_session_state(data):
+    ''' Initialze session state variables '''
     if 'search' not in st.session_state:
         st.session_state.search = ''
     if 'culture' not in st.session_state:
         st.session_state.culture = []
-    #if 'years' not in st.session_state:
-        #st.session_state.years = (min(data['Year'].astype(int)), max(data['Year'].astype(int)))
+    if 'years' not in st.session_state:
+        st.session_state.years = (min(data['Year'].astype(int)), 2025)
     if 'datasource' not in st.session_state:
         st.session_state.datasource = None
-
-    st.logo("https://github.com/madiforman/virtual_art_museum/blob/main/images/MoVA%20bw%20logo.png?raw=true",
-        size="large")
-
-    col1, col2, col3 = st.columns([20,1,1])
-
-    with col1:
-        st.image("https://github.com/madiforman/virtual_art_museum/blob/main/images/MoVA_logo.png?raw=true",
-                 width=400)
-
-    with col2:
-        # Replace w/ Zhansaya's page link?
-        st.page_link("https://catgdp.streamlit.app/", label='##', icon='✨', help='Favorites')
-
-    with col3:
-        if(st.button("📊")):
-            with st.spinner():
-                time.sleep(15)
-                st.write('Done')
     
-    st.markdown("#")  
-    st.markdown("#")
+def reset_filters(data):
+    ''' Resets all filters to default values '''
+    st.session_state.search = ''
+    st.session_state.culture = []
+    st.session_state.years = (min(data['Year'].astype(int)), 2025)
+    st.session_state.datasource = None
 
-def sidebar_setup(data):
-    """ Sidebar configuration """
-    
-    st.sidebar.header('Advanced filters')
-
-    reset_button = st.sidebar.button('Reset Filters')
-    # reset filters when clicked
-    if reset_button:
-        st.session_state.filters_reset = True
-        st.session_state.search = ''
-        st.session_state.culture = []
-        st.session_state.years = (min(data['Year'].astype(int)), max(data['Year'].astype(int)))
-        st.session_state.datasource = None
-        st.rerun()
-
-    search = st.sidebar.text_input("🔍︎ Search by keyword: ", value=st.session_state.search)
-
-    culture_list = data["Culture"].unique().tolist()
-    culture = st.sidebar.multiselect("Culture: ", culture_list, 
-                                    default=st.session_state.culture)
-
-    years = st.sidebar.slider('Time Period: ', 
-                              min_value = min(data['Year'].astype(int)),
-                              max_value = max(data['Year'].astype(int)),
-                              value=st.session_state.years)
-
-    datasource = st.sidebar.radio('Datasource: ', ['MET', 'Europeana'], 
-                                  index=None if st.session_state.get('datasource', None) is None 
-                                  else ['MET', 'Europeana'].index(st.session_state.datasource)) 
-
-def filter_data(data):
-    """
-    Filters the combined dataframe based on user inputs
-    """
-    
-    if st.session_state.search:
+@st.cache_data
+def filter_data(data, search, culture, years, datasource):
+    """ Filters the dataframe based on user inputs """
+    if search:
         mask = False
         for column in data.columns:
             # create a boolean mask for which data points contain search parameter
-            mask = mask | data[column].astype(str).str.contains(st.session_state.search, 
+            mask = mask | data[column].astype(str).str.contains(search, 
                                                                 case=False, na=False)
         data = data[mask]
 
-    if st.session_state.culture:
-        data = data[data['Culture'].isin(st.session_state.culture)]
+    if culture:
+        data = data[data['Culture'].isin(culture)]
 
-    data = data[(data['Year'] >= st.session_state.years[0]) & (data['Year'] <= st.session_state.years[1])]
+    data = data[(data['Year'] >= years[0]) & (data['Year'] <= years[1])]
 
-    if st.session_state.datasource == 'MET':
-        data = data[data['datasource'] == 'MET']
-    elif st.session_state.datasource == 'Europeana':
-        data = data[data['datasource'] == 'Europeana']
+    if datasource == 'MET':
+        data = data[data['Repository'] == 'MET']
+    elif datasource == 'Europeana':
+        data = data[data['Repository'] == 'Europeana']
 
     return data
+
+def sidebar_setup(data):
+    ''' Sets up the sidebar UI '''
+    st.sidebar.header('Advanced filters')
+
+    reset_button = st.sidebar.button('Reset Filters', on_click=reset_filters, args=(data,))
+
+    search = st.sidebar.text_input("🔍︎ Search by keyword: ",
+                                   key = "search")
+
+    all_cultures = data["Culture"].unique().tolist()
+    culture_list = [culture for culture in all_cultures if culture != 'Culture unknown']
+    culture = st.sidebar.multiselect("Culture: ",
+                                     culture_list,
+                                     key="culture")
+
+    years = st.sidebar.slider('Time Period: ', 
+                              min_value = min(data['Year'].astype(int)),
+                              max_value = 2025,
+                              key = "years")
+
+    datasource = st.sidebar.radio('Datasource: ',
+                                  ['MET', 'Europeana'], 
+                                  index = None,
+                                  key = "datasource")
 
 def image_gallery(data):
     """
@@ -166,6 +137,7 @@ def image_gallery(data):
     rows = n // 3
     # initialize iterator for row value
     i = 0
+
     image_index = data.columns.tolist().index('image_url')
     title_index = data.columns.tolist().index('Title')
 
@@ -173,7 +145,6 @@ def image_gallery(data):
         pics = st.columns([3,3,3], gap='medium', vertical_alignment='center')
         for pic in pics:
             with pic:
-                #splitting in case we want to add more to the caption
                 caption = data.iloc[i, title_index]
                 st.image(data.iloc[i, image_index], caption=caption)
                 i += 1
@@ -186,14 +157,52 @@ def image_gallery(data):
                 caption = data.iloc[i, title_index]
                 st.image(data.iloc[i, image_index], caption=caption)
                 i += 1
+    
+def homepage():
+    ''' Initializes the UI and layout of the homepage '''
+    st.set_page_config(
+        page_title="MoVA",
+        layout="wide",
+        initial_sidebar_state="collapsed")
+
+    if 'original_data' not in st.session_state:
+        st.session_state.original_data = load_blended_cached(BLENDED_PATH).sample(n=100)
+
+    initialize_session_state(st.session_state.original_data)
+
+    st.logo("https://github.com/madiforman/virtual_art_museum/blob/main/images/MoVA%20bw%20logo.png?raw=true",
+        size="large")
+
+    col1, col2 = st.columns([20,1])
+
+    with col1:
+        st.image("https://github.com/madiforman/virtual_art_museum/blob/main/images/MoVA_logo.png?raw=true",
+                width=400)
+
+    with col2:
+        # Replace w/ Zhansaya's page link?
+        st.page_link("https://catgdp.streamlit.app/", label='##', icon='✨', help='Favorites')
+    
+    st.markdown("#")  
+    st.markdown("#")
+    
+    sidebar_setup(st.session_state.original_data)
+
+    filtered_data = filter_data(
+        st.session_state.original_data,
+        st.session_state.search,
+        st.session_state.culture,
+        st.session_state.years,
+        st.session_state.datasource
+    )
+
+    image_gallery(filtered_data)
+
+
 
 def main():
-    page_setup()
-    print("Loading data")
-    data = load_blended_cached(BLENDED_PATH)
-    # sidebar_setup(data)
-    image_gallery(data.sample(n=100))
-
+    homepage()
 
 if __name__ == "__main__":
     main()
+
