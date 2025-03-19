@@ -1,42 +1,86 @@
-import os # standard libraries
-import random
-import re
-import time
-import asyncio
-import aiohttp
+"""
+===============================================
+Common Functions - Data Aquisition
+===============================================
+This module contains the common functions for the data aquisition pipeline.
+
+Functions
+----------
+    print_example_rows: Prints the first n rows of a dataframe
+    century_mapping: Maps a year to a century
+    image_processing_europeana: Processes the Europeana data to be compatible with MET
+    blend_datasources: Blends the MET and Europeana data
+    reorder_columns: Reorders the columns of the two dataframes to be compatible with each other
+    main: Main function to run the data aquisition pipeline
+
+Authors
+----------
+    Madison Sanchez-Forman and Mya Strayer
+"""
 from math import ceil
 
-import pandas as pd 
-from tqdm import tqdm
-import numpy as np
+import pandas as pd
 
 def print_example_rows(df, n=5):
+    """
+    Prints the first n rows of a dataframe in a readable format.
+
+    Parameters
+    ----------
+    df (pd.DataFrame): The dataframe to print
+    n (int): The number of rows to print
+
+    Returns
+    -------
+    None
+    """
     rows = df.head(n)
+    print("--------------------------------")
     for _, row in rows.iterrows():
         for col in rows.columns:
-            print(f"{col}: {row[col]}")
+            print(f"\t{col}: {row[col]}")
         print("--------------------------------")
 
 def century_mapping(year):
-    ''' Creates a century value for applicable years '''
-    if year > 2015:
-        return "Unknown"
-    if year != -1: # -1 is a flag for no year found in Europeana search
-        if isinstance(year, int):
-            century = ceil(abs(year) / 100)
+    """
+    Maps a year to a century.
+
+    Parameters
+    ----------
+    year (int): The year to map
+
+    Returns
+    -------
+    str: The century of the year
+    """
+    try:
+        # Convert to int if it's a string
+        year = int(year)
+        
+        # Check valid range
+        if year > 2015:
+            return "Unknown"
+            
+        # Calculate century
+        century = ceil(abs(year) / 100)
+        
+        # Handle BC years
         if year < 0:
             return f"{century}th century BC"
+            
+        # Handle AD years with proper suffixes
+        if century == 1:
+            return f"{century}st century AD"
+        elif century == 2:
+            return f"{century}nd century AD"
+        elif century == 3:
+            return f"{century}rd century AD"
         else:
-            if century == 1:
-                return f"{century}st century AD"
-            elif century == 2:
-                return f"{century}nd century AD"
-            elif century == 3:
-                return f"{century}rd century AD"
-            else:
-                return f"{century}th century AD"
-    return year
-
+            return f"{century}th century AD"
+            
+    except (ValueError, TypeError):
+        return "Unknown"
+        
 def image_processing_europeana(met, europeana):
     """
     Transforms the Europeana data to be 
@@ -58,17 +102,17 @@ def image_processing_europeana(met, europeana):
 
     tags = met['Tags'].str.split(',').explode().unique()
     cultures = met['Culture'].str.split(',').explode().unique()
-    
+
     def find_tags(description):
         ''' Searches through the description
         column, finding any Tag matches '''
         tags_match = []
-        
+
         if description == 'Unknown' or str(description).startswith('warning:'):
             return "Description unknown"
 
         description = str(description).lower()
-        
+
         for tag in tags:
             if tag.lower() in description:
                 tags_match.append(tag)
@@ -150,7 +194,7 @@ def image_processing_europeana(met, europeana):
             country_lower = country.lower()
             if culture_lower in country_lower:
                 return culture
-        
+
         return 'Culture unknown'
 
     europeana['Culture'] = europeana['country'].apply(map_countries_to_culture)
@@ -178,13 +222,12 @@ def image_processing_europeana(met, europeana):
     def clean_creator(artist):
         if pd.isna(artist) or artist == 'Unknown' or str(artist).startswith('http://'):
             return "Artist unknown"
-        return artist  
+        return artist
 
     europeana['creator'] = europeana['creator'].apply(clean_creator)
 
     europeana['Artist biographic information'] = "Artist biographic information unknown"
     europeana['Dimensions'] = "Dimensions unknown"
-    europeana['year'] = europeana['year'].replace('Unknown', 9999).astype(int)
 
     europeana = europeana.rename(columns = {'europeana_id' : 'Object Number',
                                   'title' : 'Title',
@@ -194,22 +237,46 @@ def image_processing_europeana(met, europeana):
                                   'year' : 'Year',
                                   'repository' : 'Repository'})
     europeana = europeana.drop(columns=['country'])
-        
+
     return europeana, met
 
 def blend_datasources(met, europeana):
+    """
+    Blends the MET and Europeana dataframes.
+
+    Parameters
+    ----------
+    met (pd.DataFrame): The MET dataframe
+    europeana (pd.DataFrame): The Europeana dataframe
+
+    Returns
+    -------
+    pd.DataFrame: The blended dataframe
+    """
     return pd.concat([met, europeana])
 
 def reorder_columns(df1, df2):
     """
     Reorders the columns of the two dataframes
     to be compatible with each other
+
+    Parameters
+    ----------
+    df1 (pd.DataFrame): The first dataframe
+    df2 (pd.DataFrame): The second dataframe
+
+    Returns
+    -------
+    pd.DataFrame: The blended dataframe
     """
     first_order = df1.columns.tolist()
     df2 = df2[first_order]
     return df1, df2
 
 def main():
+    """
+    Main function to run the data aquisition pipeline.
+    """
     met = pd.read_csv('../data/MetObjects_final_filtered_processed.csv')
     europeana = pd.read_csv('../data/Europeana_data_processed.csv')
     met, europeana = reorder_columns(met, europeana)
