@@ -176,7 +176,7 @@ def homepage():
 
     with col1:
         st.image("https://github.com/madiforman/virtual_art_museum/blob/main/images/MoVA_logo.png?raw=true",
-                width=400)
+                width=300)
 
     with col2:
         # Replace w/ Zhansaya's page link?
@@ -186,7 +186,7 @@ def homepage():
         reset = st.button('↻', on_click = refresh_data, help = 'Refresh data')
     
     st.markdown("#")  
-    st.markdown("#")
+    # st.markdown("#")
     
     sidebar_setup(st.session_state.original_data)
 
