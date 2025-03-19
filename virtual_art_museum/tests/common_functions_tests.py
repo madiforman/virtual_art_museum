@@ -70,10 +70,10 @@ class TestCommonFunctions(unittest.TestCase):
     def test_print_example_rows(self):
         """ Test print_example_rows function - test only necessary to increase coverage """
         output = self.capture_output(print_example_rows, self.sample_df, 2)
-        self.assertIn('col1: a', output)
-        self.assertIn('col2: 1', output)
-        self.assertIn('col1: b', output)
-        self.assertIn('col2: 2', output)
+        self.assertIn('\tcol1: a', output)
+        self.assertIn('\tcol2: 1', output)
+        self.assertIn('\tcol1: b', output)
+        self.assertIn('\tcol2: 2', output)
 
     def test_century_mapping(self):
         """ Test century_mapping function """
@@ -134,3 +134,6 @@ class TestCommonFunctions(unittest.TestCase):
         self.assertTrue(all(df1.columns == df2.columns))
         # test that all columns from df1 are present in df2
         self.assertEqual(set(df1.columns), set(df2.columns))
+
+if __name__ == '__main__':
+    unittest.main()

@@ -132,3 +132,6 @@ class TestAsyncUtils(unittest.TestCase):
             result = filter_objects(met_data, "MET")
             self.assertEqual(len(result), 2)
             self.assertTrue('image_url' in result.columns)
+            
+if __name__ == '__main__':
+    unittest.main()
