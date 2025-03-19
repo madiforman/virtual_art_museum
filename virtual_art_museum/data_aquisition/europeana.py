@@ -32,8 +32,8 @@ from pyeuropeana import utils
 from pyeuropeana import apis
 import pandas as pd
 
-from .async_utils import filter_objects
-from .common_functions import print_example_rows, century_mapping
+from async_utils import filter_objects
+from common_functions import print_example_rows, century_mapping
 
 class Europeana:
     """
@@ -73,7 +73,7 @@ class Europeana:
         --------
             pd.DataFrame: dataframe of Europeana objects.
         """
-        query_terms = pd.read_csv('./data/query_terms.csv', header=None)
+        query_terms = pd.read_csv('../data/query_terms.csv', header=None)
         if is_test:
             query_terms = query_terms.head(5)
         query_terms = set(query_terms.iloc[:, 0].tolist())

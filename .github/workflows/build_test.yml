@@ -46,6 +46,11 @@ jobs:
     # The actual workflow steps!
     steps:
       # First, check out the repository for the current branch.
+      - shell: bash
+        env: 
+          EUROPEANA_API_KEY: ${{ secrets.EUROPEANA_API_KEY }}
+        run: |
+          export EUROPEANA_API_KEY=${{ secrets.EUROPEANA_API_KEY }}
       - uses: actions/checkout@v3
 
       # Then set up Python with a python version from the matrix.

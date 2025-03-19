@@ -71,19 +71,6 @@ class MetMuseum:
             # save name is set to a test file since we don't want to overwrite the original
             self._run_full_pipeline(path=save_name, save_final=True)
 
-    def _request_image_urls(self):
-        """
-        Requests image urls from the MET API. This calls the async_utils.py file to
-        process the data as efficiently as possible.
-
-        Returns
-        -------
-        pd.DataFrame
-            dataframe of met objects with new image urls if they exist
-        """
-        self.df = filter_objects(self.df, 'MET')
-        return self.df
-
     def _run_full_pipeline(self, path, save_final=False) -> None:
         """
         Runs the above functions to create the final MET data we will use later on.
@@ -98,12 +85,12 @@ class MetMuseum:
         """
         print("\n\nBeginning to build data from the Metropolitan Museum of Art.")
         print("Requesting image urls...")
-        self.df = self._request_image_urls()
+        self.df = filter_objects(self.df, 'MET')
         self.df = self.process_data()
         if save_final:
             self.df.to_csv(path, index=False)
-        print("Example row from the final dataframe:")
-        print_example_rows(self.df, n=1)
+        # print("Example row from the final dataframe:")
+        # print_example_rows(self.df, n=1)
     def split_delimited(self, cell):
         """
         Splits delimited values into a list
@@ -237,10 +224,9 @@ def main():
     """
     Main function to run the pipeline
     """
-    pass
-    # met = MetMuseum('../data/MetObjects_final.csv')
-    # met.filter_and_save(path='../data/MetObjects_final_filtered.csv')
-    # print(f"Length of final filtered dataframe: {len(met.df)}")
+    met = MetMuseum('../data/MetObjects_final.csv', run_full_pipeline=True)
+    met.filter_and_save(path='../data/MetObjects_final_filtered_II.csv')
+    print(f"Length of final filtered dataframe: {len(met.df)}")
 
 if __name__ == "__main__":
     main()
