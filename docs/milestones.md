@@ -1,4 +1,4 @@
-##Milestones  
+**Milestones**  
 
 Preliminary plan:  
     - Collect and preprocess large datasets containing images and artwork information from the MET and Europeana databases    
