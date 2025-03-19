@@ -32,8 +32,8 @@ from pyeuropeana import utils
 from pyeuropeana import apis
 import pandas as pd
 
-from .async_utils import filter_objects
-from .common_functions import print_example_rows, century_mapping
+from async_utils import filter_objects
+from common_functions import print_example_rows, century_mapping
 
 class Europeana:
     """
@@ -98,11 +98,11 @@ class Europeana:
                 cursor = response.get('nextCursor') # move the pointer
                 total_results += len(response.get('items', []))
                 print(f"Fetched {total_results} results for query: {query}")
-
+            break
         self.df = self.df.dropna(subset=['image_url']) # drop any objects without images
         self.df = self.df.drop_duplicates(subset=['image_url']) # drop any duplicate images
         self.df = filter_objects(self.df, flag="EUROPEANA") # filter out any objects without images
-
+        print_example_rows(self.df, n=1)
         print(f"Found {len(self.df)} valid image urls")
         return self.df
 

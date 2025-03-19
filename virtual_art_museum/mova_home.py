@@ -28,7 +28,7 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 #EUROPEANA_PATH = os.path.join(base_dir, "data", "Europeana_data_processed.csv")
 BLENDED_PATH = os.path.join(base_dir, "data", "blended_data.csv")
 
- # Caches the result so it doesn't reload every time Streamlit reruns
+# Caches the result so it doesn't reload every time Streamlit reruns
 @st.cache_data
 def load_blended_cached(path: str, sample_size: int = 10000) -> pd.DataFrame:
     """
@@ -199,8 +199,6 @@ def homepage():
     )
 
     image_gallery(filtered_data)
-
-
 
 def main():
     homepage()
