@@ -136,14 +136,14 @@ class Europeana:
             return -1
         return date
 
-    def _create_year_column(self):
+    def create_year_column(self):
         """
         Creates a year column in the dataframe by searching data for year
         Returns:
         --------
             pd.DataFrame: dataframe of Europeana objects.
         """
-        self.df['year'] = self.df.apply(self._extract_year, axis=1).astype(int)
+        self.df['year'] = self.df.apply(self.extract_year, axis=1).astype(int)
         return self.df
 
     def process_data(self):
@@ -164,7 +164,7 @@ class Europeana:
         self.df = self.df[cols_to_keep]
 
         # Create year column
-        self.df = self._create_year_column()
+        self.df = self.create_year_column()
 
         # Add repository column
         self.df['repository'] = 'EUROPEANA'

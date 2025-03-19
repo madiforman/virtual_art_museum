@@ -96,7 +96,7 @@ class MetMuseum:
         save_final : bool, optional
             T/F on if actually want to save the result right now, by default False
         """
-        print("Beginning to build data from the Metropolitan Museum of Art.")
+        print("\n\nBeginning to build data from the Metropolitan Museum of Art.")
         print("Requesting image urls...")
         self.df = self._request_image_urls()
         self.df = self.process_data()

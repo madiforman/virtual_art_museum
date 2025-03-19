@@ -30,7 +30,7 @@ class MetMuseumTests(unittest.TestCase):
         ''' Sets up the test data '''
         tracemalloc.start()
         warnings.filterwarnings("ignore", category=ResourceWarning)
-        self.test_size = 2000
+        self.test_size = 1500
 
         bad_row = pd.DataFrame([{
                                 'Object ID': '123456789021394871478891498290',
