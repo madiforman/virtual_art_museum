@@ -80,6 +80,15 @@ def reset_filters(data):
     st.session_state.years = (min(data['Year'].astype(int)), 2025)
     st.session_state.datasource = None
 
+def refresh_data():
+    ''' Clear cached data and rerun app '''
+    load_blended_cached.clear()
+
+    if 'original_data' in st.session_state:
+        del st.session_state['original_data']
+    
+    st.rerun()
+
 @st.cache_data
 def filter_data(data, search, culture, years, datasource):
     """ Filters the dataframe based on user inputs """
@@ -173,7 +182,7 @@ def homepage():
     st.logo("https://github.com/madiforman/virtual_art_museum/blob/main/images/MoVA%20bw%20logo.png?raw=true",
         size="large")
 
-    col1, col2 = st.columns([20,1])
+    col1, col2, col3 = st.columns([20,1,1])
 
     with col1:
         st.image("https://github.com/madiforman/virtual_art_museum/blob/main/images/MoVA_logo.png?raw=true",
@@ -182,6 +191,9 @@ def homepage():
     with col2:
         # Replace w/ Zhansaya's page link?
         st.page_link("https://catgdp.streamlit.app/", label='##', icon='✨', help='Favorites')
+
+    with col3:
+        reset = st.button('↻', on_click = refresh_data, help='Refresh data')
     
     st.markdown("#")  
     st.markdown("#")
