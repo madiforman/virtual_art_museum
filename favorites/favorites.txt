@@ -1,1 +1,0 @@
-https://collectionapi.metmuseum.org/api/collection/v1/iiif/437111/796133/restricted
