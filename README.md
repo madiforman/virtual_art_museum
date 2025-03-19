@@ -14,7 +14,7 @@
 - Can we display archival artwork in a way that allows users to filter through it like they were at a musuem, i.e., by exhibit, artist, artistic movement or time period?  
 - Can we pull and combine artworks from two museums into a single collection?  
  
-## Project Goals
+## Project Goals: 
 - Create a Streamlit-based web application for a virtual art museum.  
 - Display both basic as historic information about artworks.  
 - Implement search, filter, save, download and pop-up functionalities.    
