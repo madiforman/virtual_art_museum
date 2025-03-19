@@ -28,7 +28,7 @@ Functions
 
 References
 ----------
-    https://metmuseum.github.io/
+    https://github.com/metmuseum/openaccess
 
 Authors
 ----------
@@ -229,9 +229,10 @@ def main():
     """
     Main function to run the pipeline
     """
-    met = MetMuseum('../data/MetObjects_final.csv')
-    met.filter_and_save(path='../data/MetObjects_final_filtered.csv')
-    print(f"Length of final filtered dataframe: {len(met.df)}")
+    pass
+    # met = MetMuseum('../data/MetObjects_final.csv')
+    # met.filter_and_save(path='../data/MetObjects_final_filtered.csv')
+    # print(f"Length of final filtered dataframe: {len(met.df)}")
 
 if __name__ == "__main__":
     main()

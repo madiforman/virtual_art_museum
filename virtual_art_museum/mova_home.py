@@ -20,6 +20,8 @@ import math
 import os
 import re
 
+from popup import display_artwork_popup
+
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
 #MET_PATH = os.path.join(base_dir, "data", "MetObjects_final_filtered_processed.csv")
@@ -138,35 +140,23 @@ def sidebar_setup(data):
                                   key = "datasource")
 
 def image_gallery(data):
-    """
-    Prints images in 1x3 rows alongside their captions
-    For the final row, prints the number of images left (1X1 or 1x2)
-    """
-    n = len(data)
-    rows = n // 3
-    # initialize iterator for row value
-    i = 0
+    cols = st.columns(4, gap='medium')
+    for idx, artwork in enumerate(data.itertuples()):
+        with cols[idx % 4]:
+            with st.container():
+                st.markdown(f"""
+                    <div style='cursor: pointer; transition: transform 0.2s;'
+                         onmouseover='this.style.transform="scale(1.02)"'
+                         onmouseout='this.style.transform="scale(1)"'>
+                        <img src='{artwork.image_url}' style='width: 100%; border-radius: 5px;'>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            st.caption(f"{artwork.Title[:50]}")
+            if st.button(f"View details", key=f"btn_{idx}", use_container_width=True):
+                artwork_dict = data.iloc[idx].to_dict()
+                display_artwork_popup(artwork_dict)
 
-    image_index = data.columns.tolist().index('image_url')
-    title_index = data.columns.tolist().index('Title')
-
-    for row in range(rows):
-        pics = st.columns([3,3,3], gap='medium', vertical_alignment='center')
-        for pic in pics:
-            with pic:
-                caption = data.iloc[i, title_index]
-                st.image(data.iloc[i, image_index], caption=caption)
-                i += 1
-
-    leftovers = n % 3
-    if leftovers > 0:
-        lastrow = st.columns(leftovers, gap='medium', vertical_alignment='center')
-        for j in range(leftovers):
-            with lastrow[j]:
-                caption = data.iloc[i, title_index]
-                st.image(data.iloc[i, image_index], caption=caption)
-                i += 1
-    
 def homepage():
     ''' Initializes the UI and layout of the homepage '''
     st.set_page_config(
@@ -186,7 +176,7 @@ def homepage():
 
     with col1:
         st.image("https://github.com/madiforman/virtual_art_museum/blob/main/images/MoVA_logo.png?raw=true",
-                width=400)
+                width=300)
 
     with col2:
         # Replace w/ Zhansaya's page link?
@@ -196,7 +186,7 @@ def homepage():
         reset = st.button('↻', on_click = refresh_data, help = 'Refresh data')
     
     st.markdown("#")  
-    st.markdown("#")
+    # st.markdown("#")
     
     sidebar_setup(st.session_state.original_data)
 

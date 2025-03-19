@@ -24,10 +24,8 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 
 # pylint: disable= import-error, 
 from data_aquisition.met_museum import MetMuseum
-
-met_path = os.path.join(current_dir, 'data_aquisition', 'MetObjects_final.csv')
-met = MetMuseum(met_path)
-data = met.get_n_random_objs(18)
+path = '/Users/madiforman/Desktop/Software/VAM/virtual_art_museum/data/MetObjects_final_filtered_processed.csv'
+data = pd.read_csv(path)
 
 # CULTURES = ['American', 'British', 'Bohemian', 'Canadian', 'Chinese', 'Dutch', 
 #    'European', 'French', 'Finnish', 'Flemish', 'German', - madi will work on this
