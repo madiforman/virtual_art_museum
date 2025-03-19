@@ -63,12 +63,13 @@ class MetMuseum:
         dataframe of met objects.
     """
 
-    def __init__(self, file_path, run_full_pipeline=False):
+    def __init__(self, file_path, run_full_pipeline=False, save_name='./data/test_met_objects.csv'):
         """ Initalizes class with given file path """
         self.df = pd.read_csv(file_path, dtype='str')
         # If has images is false, we need to run request pipeline
         if run_full_pipeline:
-            self._run_full_pipeline(path='../data/MetObjects_final_filtered.csv', save_final=True)
+            # save name is set to a test file since we don't want to overwrite the original
+            self._run_full_pipeline(path=save_name, save_final=True)
 
     def _request_image_urls(self):
         """
@@ -95,12 +96,14 @@ class MetMuseum:
         save_final : bool, optional
             T/F on if actually want to save the result right now, by default False
         """
+        print("\n\nBeginning to build data from the Metropolitan Museum of Art.")
+        print("Requesting image urls...")
         self.df = self._request_image_urls()
         self.df = self.process_data()
         if save_final:
             self.df.to_csv(path, index=False)
-        print_example_rows(self.df, n=5)
-
+        print("Example row from the final dataframe:")
+        print_example_rows(self.df, n=1)
     def split_delimited(self, cell):
         """
         Splits delimited values into a list
@@ -130,6 +133,9 @@ class MetMuseum:
         -------
         str of cleaned culture 
         """
+        if not isinstance(culture, str):
+            return "Culture unknown"
+        
         cleaned = re.sub(r'\b(?:probably|possibly)\b\s*', '', culture, flags=re.IGNORECASE)
         cleaned = cleaned.split(',')[0].strip()
         return cleaned
@@ -179,9 +185,10 @@ class MetMuseum:
         -------
         pd.DataFrame with relevant columns
         """
-        cols_to_keep = ['Object Number', 'Department', 'Title', 'Culture', 'Artist Display Name',
-                        'Artist Display Bio', 'Object Begin Date', 'Medium',
-                        'Repository', 'Tags', 'image_url']
+        cols_to_keep = ['Object Number', 'Department', 'Title', 'Culture', 
+                        'Artist Display Name', 'Artist Display Bio', 
+                        'Object Begin Date', 'Medium', 'Repository', 'Tags', 
+                        'image_url']
 
         self.df = self.df[cols_to_keep]
         # Change repository to MET
@@ -212,7 +219,7 @@ class MetMuseum:
         self.df['Century'] = self.df['Year'].apply(century_mapping)
         return self.df
 
-    def filter_and_save(self, path) -> None:
+    def filter_and_save(self, path, process_data=True) -> None:
         """
         Filters the dataframe and saves it to a new csv file. assumes we already have image urls.
 
@@ -221,8 +228,9 @@ class MetMuseum:
         path : str
             path to save the final dataframe
         """
-        self.df = self.process_data()
-        print_example_rows(self.df, n=1)
+        if process_data:
+            self.df = self.process_data()
+            print_example_rows(self.df, n=1)
         self.df.to_csv(path, index=False)
 
 def main():

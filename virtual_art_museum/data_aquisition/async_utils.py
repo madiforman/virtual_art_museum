@@ -1,5 +1,8 @@
 
 """
+===============================================
+Async Utils - Data Acquisition
+===============================================
 This module perfoms the largest data aquisition task of the project.
 
 It is responsible for fetching the image urls from the source and filtering
@@ -52,7 +55,6 @@ def check_dropbox_content(content: bytes):
     """
     content = content[:9]
     if content == b'<!DOCTYPE': # if it is a valid dropbox url it will return hexxcode, not html
-        print("Found invalid dropbox url.")
         return False
     return True
 

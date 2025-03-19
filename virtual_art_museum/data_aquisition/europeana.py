@@ -60,7 +60,7 @@ class Europeana:
         self.df = self.create_final(path="Europeana_data_test.csv", save_final=save_final)
 
 
-    def bulk_requests(self):
+    def bulk_requests(self, is_test=False):
         """
         Queries the Europeana API for each query term in query_terms.csv
         Saves the results to a dataframe and filters out any objects without images.
@@ -73,7 +73,9 @@ class Europeana:
         --------
             pd.DataFrame: dataframe of Europeana objects.
         """
-        query_terms = pd.read_csv('../data/query_terms.csv', header=None)
+        query_terms = pd.read_csv('./data/query_terms.csv', header=None)
+        if is_test:
+            query_terms = query_terms.head(5)
         query_terms = set(query_terms.iloc[:, 0].tolist())
         # df_list = []
         for query in query_terms:
@@ -98,15 +100,14 @@ class Europeana:
                 cursor = response.get('nextCursor') # move the pointer
                 total_results += len(response.get('items', []))
                 print(f"Fetched {total_results} results for query: {query}")
-
         self.df = self.df.dropna(subset=['image_url']) # drop any objects without images
         self.df = self.df.drop_duplicates(subset=['image_url']) # drop any duplicate images
         self.df = filter_objects(self.df, flag="EUROPEANA") # filter out any objects without images
-
+        print_example_rows(self.df, n=1)
         print(f"Found {len(self.df)} valid image urls")
         return self.df
 
-    def _extract_year(self, row:pd.Series):
+    def extract_year(self, row:pd.Series):
         """
         Extracts the year from the description, title, or creator of an object.
 
@@ -135,14 +136,14 @@ class Europeana:
             return -1
         return date
 
-    def _create_year_column(self):
+    def create_year_column(self):
         """
         Creates a year column in the dataframe by searching data for year
         Returns:
         --------
             pd.DataFrame: dataframe of Europeana objects.
         """
-        self.df['year'] = self.df.apply(self._extract_year, axis=1).astype(int)
+        self.df['year'] = self.df.apply(self.extract_year, axis=1).astype(int)
         return self.df
 
     def process_data(self):
@@ -163,7 +164,7 @@ class Europeana:
         self.df = self.df[cols_to_keep]
 
         # Create year column
-        self.df = self._create_year_column()
+        self.df = self.create_year_column()
 
         # Add repository column
         self.df['repository'] = 'EUROPEANA'

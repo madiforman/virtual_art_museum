@@ -6,6 +6,7 @@ MoVA homepage:
     - Blends the data and sorts images by size
     - Filters data based on user input
     - Displays images
+    - Adds to Favorites
 """
 import time
 
@@ -28,7 +29,7 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 #EUROPEANA_PATH = os.path.join(base_dir, "data", "Europeana_data_processed.csv")
 BLENDED_PATH = os.path.join(base_dir, "data", "blended_data.csv")
 
- # Caches the result so it doesn't reload every time Streamlit reruns
+# Caches the result so it doesn't reload every time Streamlit reruns
 @st.cache_data
 def load_blended_cached(path: str, sample_size: int = 10000) -> pd.DataFrame:
     """
@@ -74,6 +75,8 @@ def initialize_session_state(data):
         st.session_state.years = (min(data['Year'].astype(int)), 2025)
     if 'datasource' not in st.session_state:
         st.session_state.datasource = None
+    if 'favorites' not in st.session_state:
+        st.session_state.favorites = []    
     
 def reset_filters(data):
     ''' Resets all filters to default values '''
@@ -140,6 +143,7 @@ def sidebar_setup(data):
                                   key = "datasource")
 
 def image_gallery(data):
+    ''' Adds Favorited and Popup Functionality'''
     cols = st.columns(4, gap='medium')
     for idx, artwork in enumerate(data.itertuples()):
         with cols[idx % 4]:
@@ -153,9 +157,32 @@ def image_gallery(data):
                 """, unsafe_allow_html=True)
             
             st.caption(f"{artwork.Title[:50]}")
+            
+            # Add to Favorites button
+            if st.button(f"❤️ Add to Favorites", key=f"fav_{idx}", use_container_width=True):
+                # Store the artwork data as a dictionary
+                artwork_dict = {
+                    'image_url': artwork.image_url,
+                    'Title': artwork.Title
+                }
+                if artwork_dict not in st.session_state.favorites:
+                    st.session_state.favorites.append(artwork_dict)
+                    st.success(f"Added '{artwork.Title[:50]}' to favorites!")
+                else:
+                    st.warning("This artwork is already in your favorites.")
+
             if st.button(f"View details", key=f"btn_{idx}", use_container_width=True):
                 artwork_dict = data.iloc[idx].to_dict()
                 display_artwork_popup(artwork_dict)
+
+def display_favorites(data):
+    ''' Displays the user's favorited artworks '''
+    if not st.session_state.favorites:
+        st.write("You have no favorites yet. Add some artworks to your favorites!")
+    else:
+        st.write("### Your Favorites")
+        favorite_data = data[data.index.isin(st.session_state.favorites)]
+        image_gallery(favorite_data)
 
 def homepage():
     ''' Initializes the UI and layout of the homepage '''
@@ -179,8 +206,8 @@ def homepage():
                 width=300)
 
     with col2:
-        # Replace w/ Zhansaya's page link?
-        st.page_link("https://catgdp.streamlit.app/", label = '##', icon = '✨', help = 'Favorites')
+        if st.button("❤️"):
+            st.switch_page("pages/favorites.py")
 
     with col3:
         reset = st.button('↻', on_click = refresh_data, help = 'Refresh data')
@@ -200,11 +227,8 @@ def homepage():
 
     image_gallery(filtered_data)
 
-
-
 def main():
     homepage()
 
 if __name__ == "__main__":
     main()
-

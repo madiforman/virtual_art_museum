@@ -14,4 +14,3 @@ Data:
     Metropolitan Museum of Art - https://metmuseum.github.io/
     Europeana - https://europeana.atlassian.net/wiki/spaces/EF/pages/2385739812/Search+API+Documentation#Query,-Filter,-and-Faceting-Fields
 
-# Setting up Europeana API -> need to add instructions to getting API key
