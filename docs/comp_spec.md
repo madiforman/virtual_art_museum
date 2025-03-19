@@ -6,7 +6,7 @@
         - Queries MET and Europeana data  
         - Provides ability to filter or search data   
     2) Required input    
-        - Users can enter search words in the search bar or apply   filters   
+        - Users can enter search words in the search bar or apply filters   
     3) Output   
         - The homepage shows queried data (images and basic art details) in a grid format  
         - When users perform a search or apply filters, the interface updates automatically   
