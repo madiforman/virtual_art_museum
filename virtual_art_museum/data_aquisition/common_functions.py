@@ -1,4 +1,7 @@
 """
+===============================================
+Common Functions - Data Aquisition
+===============================================
 This module contains the common functions for the data aquisition pipeline.
 
 Functions
