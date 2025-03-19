@@ -32,9 +32,10 @@ def print_example_rows(df, n=5):
     None
     """
     rows = df.head(n)
+    print("--------------------------------")
     for _, row in rows.iterrows():
         for col in rows.columns:
-            print(f"{col}: {row[col]}")
+            print(f"\t{col}: {row[col]}")
         print("--------------------------------")
 
 def century_mapping(year):
