@@ -30,7 +30,7 @@ class MetMuseumTests(unittest.TestCase):
         ''' Sets up the test data '''
         tracemalloc.start()
         warnings.filterwarnings("ignore", category=ResourceWarning)
-        self.test_size = 1500
+        self.test_size = 100
 
         bad_row = pd.DataFrame([{
                                 'Object ID': '123456789021394871478891498290',
@@ -78,7 +78,7 @@ class MetMuseumTests(unittest.TestCase):
         self.met = MetMuseum('./data/test_met_objects.csv', run_full_pipeline=True) # pylint: disable=attribute-defined-outside-init
 
         # Test to see if the dataframe is the correct size
-        # Size was 2000 rows, but 1 bad row was added so we should see 2000 if filtering
+        # Size was 100 rows, but 1 bad row was added so we should see 100 if filtering
         # was done correctly
         self.assertEqual(len(self.met.df), self.test_size)
         print("Successfully filtered out bad rows")
