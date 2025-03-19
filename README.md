@@ -2,7 +2,7 @@
 ![Build/Test Workflow]
 (https://github.com/madiforman/virtual_art_museum/actions/workflows/build_test.yml/badge.svg)
 
-## Project Type: Tool
+## Project Type: Data Presentation
 
 ## Group Members:
 - Madison Sanchez-Forman  
