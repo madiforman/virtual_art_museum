@@ -27,11 +27,11 @@
 ## Data Sources:
     - Metropolitan Museum of Art  
         - extensive database of more than 470,000 artworks from around the world, 
-        available via its API  
+          available via its API  
         - https://metmuseum.github.io/  
     - Europeana 
         - metadata records on Europeana repository,  
-        available via its Search API   
+          available via its Search API   
         - https://europeana.atlassian.net/wiki/spaces/EF/pages/2385739812/Search+API+Documentation#Query,-Filter,-and-Faceting-Fields  
 
 # Setting up Europeana API -> need to add instructions to getting API key
