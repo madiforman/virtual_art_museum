@@ -1,7 +1,8 @@
-Milestones:  
+##Milestones  
 
 Preliminary plan:  
-    - Collect and preprocess large datasets containing images and artwork information from the MET and Europeana databases and them  - Compile them into a Pandas data frame  
+    - Collect and preprocess large datasets containing images and artwork information from the MET and Europeana databases    
+    - Compile them into a Pandas data frame  
     - Develop a Streamlit app that retrieves and display the data as a virtual art museum  
     - Add pop-up functionality and a favorites page with a download option  
 
