@@ -1,4 +1,7 @@
 """
+===============================================
+Common Functions - Data Aquisition
+===============================================
 This module contains the common functions for the data aquisition pipeline.
 
 Functions
@@ -32,9 +35,10 @@ def print_example_rows(df, n=5):
     None
     """
     rows = df.head(n)
+    print("--------------------------------")
     for _, row in rows.iterrows():
         for col in rows.columns:
-            print(f"{col}: {row[col]}")
+            print(f"\t{col}: {row[col]}")
         print("--------------------------------")
 
 def century_mapping(year):
@@ -49,13 +53,22 @@ def century_mapping(year):
     -------
     str: The century of the year
     """
-    if year > 2015:
-        return "Unknown"
-    if year != -1: # -1 is a flag for no year found in Europeana search
-        if isinstance(year, int):
-            century = ceil(abs(year) / 100)
+    try:
+        # Convert to int if it's a string
+        year = int(year)
+        
+        # Check valid range
+        if year > 2015:
+            return "Unknown"
+            
+        # Calculate century
+        century = ceil(abs(year) / 100)
+        
+        # Handle BC years
         if year < 0:
             return f"{century}th century BC"
+            
+        # Handle AD years with proper suffixes
         if century == 1:
             return f"{century}st century AD"
         elif century == 2:
@@ -64,8 +77,10 @@ def century_mapping(year):
             return f"{century}rd century AD"
         else:
             return f"{century}th century AD"
-    return year
-
+            
+    except (ValueError, TypeError):
+        return "Unknown"
+        
 def image_processing_europeana(met, europeana):
     """
     Transforms the Europeana data to be 
@@ -213,7 +228,6 @@ def image_processing_europeana(met, europeana):
 
     europeana['Artist biographic information'] = "Artist biographic information unknown"
     europeana['Dimensions'] = "Dimensions unknown"
-    europeana['year'] = europeana['year'].replace('Unknown', 9999).astype(int)
 
     europeana = europeana.rename(columns = {'europeana_id' : 'Object Number',
                                   'title' : 'Title',
