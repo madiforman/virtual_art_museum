@@ -17,7 +17,7 @@ SPACING = 20
 CAPTION_HEIGHT = 40
 BACKGROUND_COLOR = (240, 240, 240)
 
-st.set_page_config(page_title="MoVA - Favorites", layout="wide")
+# st.set_page_config(page_title="MoVA - Favorites", layout="wide")
 
 st.markdown(
     """
@@ -40,7 +40,7 @@ def load_favorites() -> list:
         with open(FAVORITES_CACHE_FILE, "r", encoding="utf-8") as file:
             return json.load(file)
     return []
-
+    
 def save_favorites(favorites: list) -> None:
     """Save favorites to the cache file."""
     with open(FAVORITES_CACHE_FILE, "w", encoding="utf-8") as file:

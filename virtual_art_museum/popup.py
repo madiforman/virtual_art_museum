@@ -17,6 +17,7 @@ Authors
 import streamlit as st
 import requests
 
+@st.dialog("Details")
 def display_artwork_popup(artwork):
     """
     Display a popup with artwork details using Streamlit's dialog feature.
@@ -31,57 +32,23 @@ def display_artwork_popup(artwork):
     None
     """
     # markdown for styling the popup
-    st.markdown("""
-        <style>
-            .artwork-popup {
-                background-color: white;
-                padding: 20px;
-                border-radius: 10px;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            }
-            .artwork-image {
-                width: 100%;
-                max-height: 60vh;
-                object-fit: contain;
-            }
-            .artwork-title {
-                font-size: 24px;
-                font-weight: bold;
-                margin: 15px 0;
-            }
-            .artwork-details {
-                font-size: 16px;
-                color: #4A4A4A;
-                margin: 10px 0;
-            }
-            .artwork-metadata {
-                background-color: #F8F9FA;
-                padding: 15px;
-                border-radius: 5px;
-                margin: 10px 0;
-            }
-        </style>
-    """, unsafe_allow_html=True)
+    if artwork['Repository'] == "MET":
+        st.image(artwork['image_url'], use_container_width=True)
+        st.markdown(f"### {artwork['Title'][:50]}")
+        st.markdown(f"**Artist:** {artwork['Artist']}")
+        st.markdown(f"**Artist Bio:** {artwork['Artist biographic information']}")
+        st.markdown(f"**Century:** {artwork['Century']}")
+        st.markdown(f"**Medium:** {artwork.get('Medium', 'Unknown')}")
+        st.markdown(f"**Culture:** {artwork.get('Culture', 'Unknown')}")
+        st.markdown(f"**Dimensions**: {artwork.get('Dimensions')}")
 
-    # container for the popup
-    with st.container():
-        # if the artwork is from the MET, display the following details
-        if artwork['Repository'] == "MET":
-            st.markdown(f"### {artwork['Title']}")
-            st.markdown(f"**Artist:** {artwork['Artist']}")
-            st.markdown(f"**Artist Bio:** {artwork['Artist biographic information']}")
-            st.markdown(f"**Century:** {artwork['Century']}")
-            st.markdown(f"**Medium:** {artwork.get('Medium', 'Unknown')}")
-            st.markdown(f"**Culture:** {artwork.get('Culture', 'Unknown')}")
-            st.markdown(f"**Dimensions**: {artwork.get('Dimensions')}")
+    elif artwork['Repository'] == 'Europeana':
+        st.image(artwork['image_url'], use_container_width=True)
+        st.markdown(f"### {artwork['Title'][:50]}")
+        st.markdown(f"**Artist:** {artwork['Artist']}")
+        st.markdown(f"**Culture:** {artwork['Culture']}")
+        st.markdown(f"**Description:** {artwork['Description']}")
 
-        # if the artwork is from Europeana, display the following details
-        elif artwork['Repository'] == 'Europeana':
-            st.markdown(f"### {artwork['Title']}")
-            st.markdown(f"**Artist:** {artwork['Artist']}")
-            st.markdown(f"**Culture:** {artwork['Culture']}")
-            st.markdown(f"**Description:** {artwork['Description']}")
-
-        # close button
-            if st.button("Close", key="close_popup"):
-                st.rerun()
+    # Add a close button at the bottom
+    if st.button("Close", key="close_popup"):
+        st.rerun()

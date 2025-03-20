@@ -18,7 +18,6 @@ from PIL import Image
 
 # Import functions from favorites.py
 from Pages.favorites import load_favorites, save_favorites, create_collage, display_favorites, main
-
 FAVORITES_CACHE_FILE = "favorites_cache.json"
 
 class TestFavorites(unittest.TestCase):
@@ -31,20 +30,48 @@ class TestFavorites(unittest.TestCase):
             {"image_url": "http://example.com/image2.jpg", "Title": "Artwork 2"},
         ]
 
-    @patch("builtins.open", new_callable=mock_open, read_data=json.dumps([]))
-    def test_load_favorites_empty(self, mock_file):
-        """Test that load_favorites returns an empty list when the cache file is empty."""
+    @patch('builtins.open')
+    @patch('os.path.exists')  # Add os.path.exists patch
+    def test_load_favorites_empty(self, mock_exists, mock_file):
+        """Test that load_favorites returns an empty list when the cache file is empty"""
+        # Set up os.path.exists to return False
+        mock_exists.return_value = False
+        
+        # Call the function
         favorites = load_favorites()
+        
+        # Verify results
         self.assertEqual(favorites, [])
-        mock_file.assert_called_with(FAVORITES_CACHE_FILE, "r", encoding="utf-8")
-
-    @patch("builtins.open", new_callable=mock_open, read_data=json.dumps([{"image_url": "http://example.com/image.jpg", "Title": "Artwork"}]))
-    def test_load_favorites_with_data(self, mock_file):
-        """Test that load_favorites correctly loads data from a non-empty cache file."""
+        
+        # Verify that exists was checked and open was never called
+        mock_exists.assert_called_once_with(FAVORITES_CACHE_FILE)
+        mock_file.assert_not_called()
+    
+    @patch('builtins.open')
+    @patch('os.path.exists')
+    def test_load_favorites_with_data(self, mock_exists, mock_file):
+        """Test that load_favorites correctly loads data from a non-empty cache file"""
+        # Setup test data
+        test_data = [{'image_url': 'test_url', 'Title': 'Test Art'}]
+        
+        # Mock os.path.exists to return True
+        mock_exists.return_value = True
+        
+        # Setup mock to return JSON string directly
+        mock_context = MagicMock()
+        mock_context.read.return_value = json.dumps(test_data)
+        mock_file.return_value.__enter__.return_value = mock_context
+        
+        # Call the function
         favorites = load_favorites()
+
+        # Verify results
         self.assertEqual(len(favorites), 1)
-        self.assertEqual(favorites[0]["Title"], "Artwork")
-        mock_file.assert_called_with(FAVORITES_CACHE_FILE, "r", encoding="utf-8")
+        self.assertEqual(favorites, test_data)
+        
+        # Verify the mocks were called correctly
+        mock_exists.assert_called_once_with(FAVORITES_CACHE_FILE)
+        mock_file.assert_called_once_with(FAVORITES_CACHE_FILE, "r", encoding="utf-8")
 
     @patch("builtins.open", new_callable=mock_open)
     @patch("json.dump")

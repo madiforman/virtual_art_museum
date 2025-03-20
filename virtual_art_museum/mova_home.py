@@ -25,13 +25,13 @@ from popup import display_artwork_popup
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
-#MET_PATH = os.path.join(base_dir, "data", "MetObjects_final_filtered_processed.csv")
-#EUROPEANA_PATH = os.path.join(base_dir, "data", "Europeana_data_processed.csv")
+MET_PATH = os.path.join(base_dir, "data", "MetObjects_final_filtered_processed.csv")
+EUROPEANA_PATH = os.path.join(base_dir, "data", "Europeana_data_processed.csv")
 BLENDED_PATH = os.path.join(base_dir, "data", "blended_data.csv")
 
 # Caches the result so it doesn't reload every time Streamlit reruns
 @st.cache_data
-def load_blended_cached(path: str, sample_size: int = 10000) -> pd.DataFrame:
+def load_blended_cached(path1: str, path2: str, sample_size: int = 1000) -> pd.DataFrame:
     """
     Loads stratified sample of data with repository proportions assuming 80% MET and 20% Europeana.
 
@@ -42,28 +42,25 @@ def load_blended_cached(path: str, sample_size: int = 10000) -> pd.DataFrame:
     Returns:
         pd.DataFrame: A dataframe containing the sampled data
     """
-    try:
-        repo_proportions = {
-            'MET': 0.8,        # Assuming 80% of data is MET
-            'Europeana': 0.2   # Assuming 20% is Europeana
-        }
-        # # samples per repository
-        samples_per_repo = {
-            repo: int(sample_size * prop)
-            for repo, prop in repo_proportions.items()
-        }
-        # Sample from each repository
-        samples = [
-            pd.read_csv(path).query(f"Repository == '{repo}'").sample(n=count, random_state=42)
-            for repo, count in samples_per_repo.items()
-        ]
-        # Combine and shuffle
-        final_df = pd.concat(samples, ignore_index=True).sample(frac=1, random_state=42)
-        #print(f"Loaded {len(final_df)} rows\n{final_df['Repository'].value_counts()}")
-        return final_df
-    except Exception as e:
-        st.error(f"Error loading data: {str(e)}")
-        return pd.DataFrame()
+    repo_proportions = {
+        'MET': 0.7,        # Stratified sample since we know we have less Europeana data
+        'Europeana': 0.3   
+    }
+    # samples per repository
+    samples_per_repo = {
+        repo: int(sample_size * prop)
+        for repo, prop in repo_proportions.items()
+    }
+    # Sample from each repository
+    samples = [
+        pd.read_csv(path1).sample(n=samples_per_repo['MET']),
+        pd.read_csv(path2).sample(n=samples_per_repo['Europeana'])
+    ]
+    # Combine and shuffle
+    final_df = pd.concat(samples, ignore_index=True).sample(frac=1, random_state=42)
+    print(f"Loaded {len(final_df)} rows\n{final_df['Repository'].value_counts()}")
+    return final_df
+
 
 def initialize_session_state(data):
     ''' Initialze session state variables '''
@@ -159,7 +156,7 @@ def image_gallery(data):
             st.caption(f"{artwork.Title[:50]}")
             
             # Add to Favorites button
-            if st.button(f"❤️ Add to Favorites", key=f"fav_{idx}", use_container_width=True):
+            if st.button(f"Add to Favorites ❤️", key=f"fav_{idx}", use_container_width=True):
                 # Store the artwork data as a dictionary
                 artwork_dict = {
                     'image_url': artwork.image_url,
@@ -171,7 +168,7 @@ def image_gallery(data):
                 else:
                     st.warning("This artwork is already in your favorites.")
 
-            if st.button(f"View details", key=f"btn_{idx}", use_container_width=True):
+            if st.button(f"Details", key=f"btn_{idx}", use_container_width=True):
                 artwork_dict = data.iloc[idx].to_dict()
                 display_artwork_popup(artwork_dict)
 
@@ -184,7 +181,7 @@ def display_favorites(data):
         favorite_data = data[data.index.isin(st.session_state.favorites)]
         image_gallery(favorite_data)
 
-def homepage():
+def homepage(path1: str, path2: str):
     ''' Initializes the UI and layout of the homepage '''
     st.set_page_config(
         page_title="MoVA",
@@ -192,7 +189,7 @@ def homepage():
         initial_sidebar_state="collapsed")
 
     if 'original_data' not in st.session_state:
-        st.session_state.original_data = load_blended_cached(BLENDED_PATH).sample(n=100)
+        st.session_state.original_data = load_blended_cached(path1, path2).sample(n=250)
 
     initialize_session_state(st.session_state.original_data)
 
@@ -212,9 +209,7 @@ def homepage():
     with col3:
         reset = st.button('↻', on_click = refresh_data, help = 'Refresh data')
     
-    st.markdown("#")  
-    # st.markdown("#")
-    
+    st.markdown("#")      
     sidebar_setup(st.session_state.original_data)
 
     filtered_data = filter_data(
@@ -228,7 +223,7 @@ def homepage():
     image_gallery(filtered_data)
 
 def main():
-    homepage()
+    homepage(MET_PATH, EUROPEANA_PATH)
 
 if __name__ == "__main__":
     main()

@@ -41,7 +41,7 @@ def print_example_rows(df, n=5):
             print(f"\t{col}: {row[col]}")
         print("--------------------------------")
 
-def century_mapping(year):
+def century_mapping(year): # pylint: disable=too-many-return-statements
     """
     Maps a year to a century.
 
@@ -56,32 +56,31 @@ def century_mapping(year):
     try:
         # Convert to int if it's a string
         year = int(year)
-        
+
         # Check valid range
         if year > 2015:
             return "Unknown"
-            
+
         # Calculate century
         century = ceil(abs(year) / 100)
-        
+
         # Handle BC years
         if year < 0:
             return f"{century}th century BC"
-            
+
         # Handle AD years with proper suffixes
         if century == 1:
             return f"{century}st century AD"
-        elif century == 2:
+        if century == 2:
             return f"{century}nd century AD"
-        elif century == 3:
+        if century == 3:
             return f"{century}rd century AD"
-        else:
-            return f"{century}th century AD"
-            
+        return f"{century}th century AD"
+
     except (ValueError, TypeError):
         return "Unknown"
-        
-def image_processing_europeana(met, europeana):
+
+def image_processing_europeana(met, europeana): # pylint: disable=too-many-statements
     """
     Transforms the Europeana data to be 
     compatible with MET merge.
@@ -209,13 +208,12 @@ def image_processing_europeana(met, europeana):
 
         if comma == -1 and period == -1:
             return title
-        elif comma == -1:
+        if comma == -1:
             return title[:period].strip()
-        elif period == -1:
+        if period == -1:
             return title[:comma].strip()
-        else:
-            endpoint = min(idx for idx in [comma, period] if idx >= 0)
-            return title[:endpoint].strip()
+        endpoint = min(idx for idx in [comma, period] if idx >= 0)
+        return title[:endpoint].strip()
 
     europeana['title'] = europeana['title'].apply(clean_title)
 

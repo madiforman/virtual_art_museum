@@ -1,0 +1,10 @@
+aiohttp==3.10.5
+numpy==1.24.4
+pandas==1.5.3
+Pillow
+pyeuropeana==0.1.7
+python-dotenv==1.0.1
+Requests==2.32.3
+setuptools==75.3.0
+streamlit==1.41.1
+tqdm==4.67.1

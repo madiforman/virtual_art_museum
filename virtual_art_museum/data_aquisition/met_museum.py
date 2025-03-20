@@ -39,8 +39,11 @@ import re
 
 import pandas as pd
 
-from .async_utils import filter_objects
-from .common_functions import print_example_rows, century_mapping
+from data_aquisition.async_utils import filter_objects # pylint: disable=import-error
+from data_aquisition.common_functions import ( # pylint: disable=import-error
+    print_example_rows,
+    century_mapping
+)
 
 
 class MetMuseum:
@@ -71,19 +74,6 @@ class MetMuseum:
             # save name is set to a test file since we don't want to overwrite the original
             self._run_full_pipeline(path=save_name, save_final=True)
 
-    def _request_image_urls(self):
-        """
-        Requests image urls from the MET API. This calls the async_utils.py file to
-        process the data as efficiently as possible.
-
-        Returns
-        -------
-        pd.DataFrame
-            dataframe of met objects with new image urls if they exist
-        """
-        self.df = filter_objects(self.df, 'MET')
-        return self.df
-
     def _run_full_pipeline(self, path, save_final=False) -> None:
         """
         Runs the above functions to create the final MET data we will use later on.
@@ -98,12 +88,12 @@ class MetMuseum:
         """
         print("\n\nBeginning to build data from the Metropolitan Museum of Art.")
         print("Requesting image urls...")
-        self.df = self._request_image_urls()
+        self.df = filter_objects(self.df, 'MET')
         self.df = self.process_data()
         if save_final:
             self.df.to_csv(path, index=False)
-        print("Example row from the final dataframe:")
-        print_example_rows(self.df, n=1)
+        # print("Example row from the final dataframe:")
+        # print_example_rows(self.df, n=1)
     def split_delimited(self, cell):
         """
         Splits delimited values into a list
@@ -135,7 +125,7 @@ class MetMuseum:
         """
         if not isinstance(culture, str):
             return "Culture unknown"
-        
+
         cleaned = re.sub(r'\b(?:probably|possibly)\b\s*', '', culture, flags=re.IGNORECASE)
         cleaned = cleaned.split(',')[0].strip()
         return cleaned
@@ -185,9 +175,9 @@ class MetMuseum:
         -------
         pd.DataFrame with relevant columns
         """
-        cols_to_keep = ['Object Number', 'Department', 'Title', 'Culture', 
-                        'Artist Display Name', 'Artist Display Bio', 
-                        'Object Begin Date', 'Medium', 'Repository', 'Tags', 
+        cols_to_keep = ['Object Number', 'Department', 'Title', 'Culture',
+                        'Artist Display Name', 'Artist Display Bio',
+                        'Object Begin Date', 'Medium', 'Repository', 'Tags',
                         'image_url']
 
         self.df = self.df[cols_to_keep]
@@ -237,10 +227,11 @@ def main():
     """
     Main function to run the pipeline
     """
-    pass
-    # met = MetMuseum('../data/MetObjects_final.csv')
-    # met.filter_and_save(path='../data/MetObjects_final_filtered.csv')
+    # met = MetMuseum('../data/MetObjects_final.csv', run_full_pipeline=True)
+    # met.filter_and_save(path='../data/MetObjects_final_filtered_II.csv')
     # print(f"Length of final filtered dataframe: {len(met.df)}")
+    met_test = MetMuseum('../data/MetObjects.txt', run_full_pipeline=True)
+    met_test.filter_and_save(path='../data/MetObjects_test.csv', process_data=True)
 
 if __name__ == "__main__":
     main()

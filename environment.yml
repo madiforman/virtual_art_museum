@@ -1,7 +1,6 @@
 name: vamenv
 channels:
   - conda-forge
-  - defaults
 dependencies:
   - python=3.8  # Streamlit 1.35.0 requires Python 3.8
   - numpy>=1.19.3
@@ -10,6 +9,8 @@ dependencies:
   - aiohttp
   - requests
   - tqdm
+  - pylint=3.2.7
+  - coverage
   # Add any other dependencies your project needs
   - pip
   - pip:

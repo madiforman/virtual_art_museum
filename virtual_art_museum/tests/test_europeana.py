@@ -12,8 +12,9 @@ Tests
 Note
 -------
     Since the API calls are expensive and time-consuming, we'll mock the API responses
-    and test the data processing functionality. We will not see any valid image urls in this
-    response because of the mocking
+    and test the data processing functionality. I added one valid image url to the mock to 
+    show that the data processing functionality is working, in contrast to the Met Museum
+    test script where we see a bad url filtered out.
 """
 import unittest
 from unittest.mock import patch
@@ -23,7 +24,7 @@ import warnings
 
 import pandas as pd
 
-from data_aquisition.europeana import Europeana
+from data_aquisition.europeana import Europeana # pylint: disable=import-error
 
 class EuropeanaTests(unittest.TestCase):
     """ Tests the Europeana class """
@@ -63,7 +64,7 @@ class EuropeanaTests(unittest.TestCase):
         # Mock the utils.search2df to return a DataFrame
         mock_utils.search2df.return_value = pd.DataFrame({
             'europeana_id': ['test_id_1'],
-            'image_url': ['http://test1.jpg'],
+            'image_url': ['https://iiif.wellcomecollection.org/image/V0006952.jpg/full/512,/0/default.jpg'],
             'title': ['Painting from 1850'],
             'creator': ['Artist Name'],
             'description': ['Created in 1855'],

@@ -12,7 +12,7 @@ from unittest.mock import Mock, patch
 
 import asyncio
 import aiohttp
-from data_aquisition.async_utils import (
+from data_aquisition.async_utils import ( # pylint: disable=import-error
     check_europeana_response,
     fetch,
     filter_objects

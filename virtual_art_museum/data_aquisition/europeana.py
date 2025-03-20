@@ -25,6 +25,7 @@ Authors
     Madison Sanchez-Forman and Mya Strayer
 """
 import re
+import os
 
 from dotenv import load_dotenv
 
@@ -32,8 +33,11 @@ from pyeuropeana import utils
 from pyeuropeana import apis
 import pandas as pd
 
-from .async_utils import filter_objects
-from .common_functions import print_example_rows, century_mapping
+from data_aquisition.async_utils import filter_objects # pylint: disable=import-error
+from data_aquisition.common_functions import ( # pylint: disable=import-error
+    print_example_rows,
+    century_mapping
+)
 
 class Europeana:
     """
@@ -45,8 +49,8 @@ class Europeana:
 
     Parameters
     ----------
-    file_path : str
-        path to Europeana objects file. Can either be the unfiltered or filtered version.
+    save_final : bool, optional
+        T/F on if actually want to save the result right now, by default False
 
     Attributes:
     ----------
@@ -57,7 +61,11 @@ class Europeana:
     def __init__(self, save_final=False):
         """ Initalalizes class with empty dataframe """
         self.df = pd.DataFrame()
-        self.df = self.create_final(path="Europeana_data_test.csv", save_final=save_final)
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.query_path = os.path.join(os.path.dirname(current_dir),
+                                        'data',
+                                        'query_terms.csv')
+        self.df = self.create_final(save_final=save_final)
 
 
     def bulk_requests(self, is_test=False):
@@ -73,11 +81,12 @@ class Europeana:
         --------
             pd.DataFrame: dataframe of Europeana objects.
         """
-        query_terms = pd.read_csv('./data/query_terms.csv', header=None)
+        query_terms = pd.read_csv(self.query_path, header=None)
         if is_test:
             query_terms = query_terms.head(5)
         query_terms = set(query_terms.iloc[:, 0].tolist())
-        # df_list = []
+        print("\n\nBeginning to build data from Europeana.")
+
         for query in query_terms:
             cursor = '*'  # Initial cursor value
             total_results = 0
@@ -99,7 +108,8 @@ class Europeana:
 
                 cursor = response.get('nextCursor') # move the pointer
                 total_results += len(response.get('items', []))
-                print(f"Fetched {total_results} results for query: {query}")
+                print(f"\t\tQuery Term: {query} - Total Results: {total_results}")
+
         self.df = self.df.dropna(subset=['image_url']) # drop any objects without images
         self.df = self.df.drop_duplicates(subset=['image_url']) # drop any duplicate images
         self.df = filter_objects(self.df, flag="EUROPEANA") # filter out any objects without images
@@ -174,14 +184,14 @@ class Europeana:
         self.df = self.df.replace(-1, "Unknown")
         return self.df
 
-    def create_final(self, path, save_final=False):
+    def create_final(self, save_final=False, version=1):
         """
         Creates a final dataframe by running the bulk requests and processing the data.
 
         Parameters
         ----------
-            path (str): path to save the final dataframe
             save_final (bool, optional): whether to save the final dataframe. Defaults to False.
+            version (int, optional): version number of the final dataframe. Defaults to 1.
 
         Returns:
         --------
@@ -190,7 +200,7 @@ class Europeana:
         self.df = self.bulk_requests()
         self.df = self.process_data()
         if save_final:
-            self.df.to_csv(path, index=False)
+            self.df.to_csv(f"Europeana_data_v{version}.csv", index=False)
         print_example_rows(self.df, n=5)
         return self.df
 
@@ -198,6 +208,10 @@ def main():
     """
     Main function to run the aquisition pipeline
     """
+    # set and run secret key
+    load_dotenv()
+    api_key = os.getenv('EUROPEANA_API_KEY')
+    os.environ['EUROPEANA_API_KEY'] = api_key
     Europeana()
 
 if __name__ == "__main__":
