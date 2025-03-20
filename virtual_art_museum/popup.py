@@ -83,5 +83,5 @@ def display_artwork_popup(artwork):
             st.markdown(f"**Description:** {artwork['Description']}")
 
         # close button
-            if st.button("Close", key="close_popup"):
-                st.rerun()
+        if st.button("Close", key="close_popup"):
+            st.rerun()

@@ -175,7 +175,7 @@ async def run(df, flag: str):
         raise ValueError(f"Invalid source given: {flag}. Must be either MET or EUROPEANA")
 
     tasks = []
-    max_requests = 500
+    max_requests = 100
     semaphore = asyncio.Semaphore(max_requests)
     start_time = time.time()
 
