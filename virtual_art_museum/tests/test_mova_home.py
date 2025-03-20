@@ -54,13 +54,13 @@ class TestMovaHome(unittest.TestCase):
         
         self.assertEqual(len(result), 1000)
         
-        mock_read_csv.assert_called_once_with("test_path.csv")
+        mock_read_csv.assert_called_twice_with("test_path.csv")
         
         full_data.query.assert_any_call("Repository == 'MET'")
         full_data.query.assert_any_call("Repository == 'Europeana'")
         
-        full_data_met.sample.assert_called_once_with(n=800, random_state=42)
-        full_data_europeana.sample.assert_called_once_with(n=200, random_state=42)
+        met_query_result.sample.assert_called_once_with(n=800, random_state=42)
+        europeana_query_result.sample.assert_called_once_with(n=200, random_state=42)
     
     @patch('pandas.read_csv')
     @patch('streamlit.error')
@@ -189,13 +189,29 @@ class TestMovaHome(unittest.TestCase):
             self.assertEqual(session_state_mock['years'], (2010, 2025))
             self.assertIsNone(session_state_mock['datasource'])
 
+    @patch('streamlit.rerun')
     def test_refresh_data_with_original_data(self, mock_rerun):
         ''' Tests if cache was cleared and the file was reran '''
         session_state_mock = {'original_data': pd.DataFrame()}
         
         with patch('streamlit.session_state', session_state_mock), \
-             patch('mova_home.load_blended_cached') as mock_load_blended, \
-             patch('streamlit.rerun') as mock_rerun:
+             patch('mova_home.load_blended_cached') as mock_load_blended:
+                
+            mock_load_blended.clear = MagicMock()
+            
+            refresh_data()
+            
+            mock_load_blended.clear.assert_called_once()
+            self.assertNotIn('original_data', session_state_mock)
+            mock_rerun.assert_called_once()
+
+    @patch('streamlit.rerun')
+    def test_refresh_data_without_original_data(self, mock_rerun):
+        ''' Tests refresh_data when no original_data in session state '''
+        session_state_mock = {}
+        
+        with patch('streamlit.session_state', session_state_mock), \
+             patch('mova_home.load_blended_cached') as mock_load_blended:
                 
             mock_load_blended.clear = MagicMock()
             
@@ -302,7 +318,7 @@ class TestMovaHome(unittest.TestCase):
         expected = data.iloc[[2]]
         pd.testing.assert_frame_equal(result, expected)
 
-    def test_sidebar_setup(self, mock_sidebar):
+    def test_sidebar_setup(self):
         ''' Tests sidebar is setup appropriately  '''
         data = pd.DataFrame({
             'Year': [2010, 2015, 2020],
@@ -357,7 +373,7 @@ class TestMovaHome(unittest.TestCase):
             self.assertEqual(mock_radio.call_args[1]['index'], None)
             self.assertEqual(mock_radio.call_args[1]['key'], 'datasource')
 
-    def test_image_gallery_renders_correct_number_of_artworks(self, mock_button, mock_caption, mock_markdown, mock_columns):
+    def test_image_gallery_renders_correct_number_of_artworks(self):
         ''' Tests the image_gallery function for sample data '''
         sample_data = pd.read_csv(StringIO("""
         id,Title,Artist,image_url
@@ -386,9 +402,9 @@ class TestMovaHome(unittest.TestCase):
             
             self.assertEqual(mock_caption.call_count, 5)
             
-            self.assertEqual(mock_button.call_count, 5)
+            self.assertEqual(mock_button.call_count, 10)
 
-    def test_image_gallery_truncates_long_titles(self, mock_button, mock_caption, mock_markdown, mock_columns):
+    def test_image_gallery_truncates_long_titles(self):
         ''' Verifies the image_gallery cleans the titles '''
         long_title_data = pd.DataFrame({
             'id': [1],
@@ -413,7 +429,7 @@ class TestMovaHome(unittest.TestCase):
             
             mock_caption.assert_called_once_with(expected_caption)
 
-    def test_image_gallery_calls_popup_when_button_clicked(self, mock_popup, mock_button, mock_caption, mock_markdown, mock_columns):
+    def test_image_gallery_calls_popup_when_button_clicked(self):
         ''' Tests image_gallery when the button is clicked '''
         sample_data = pd.read_csv(StringIO("""
         id,Title,Artist,image_url
@@ -445,7 +461,7 @@ class TestMovaHome(unittest.TestCase):
             self.assertEqual(artwork_dict['Artist'], 'Vincent van Gogh')
             self.assertEqual(artwork_dict['image_url'], 'https://example.com/starry_night.jpg')
 
-    def test_image_gallery_with_empty_dataframe(self, mock_button, mock_caption, mock_markdown, mock_columns):
+    def test_image_gallery_with_empty_dataframe(self):
         ''' Tests image_gallery when dataframe is blank '''
         empty_data = pd.DataFrame(columns=['id', 'Title', 'Artist', 'image_url'])
         
@@ -466,7 +482,7 @@ class TestMovaHome(unittest.TestCase):
             mock_caption.assert_not_called()
             mock_button.assert_not_called()
 
-    def test_homepage_without_original_data(self, mock_markdown, mock_columns, mock_logo, mock_set_page_config):
+    def test_homepage_without_original_data(self):
         ''' Tests the homepage setup function '''
         session_state_mock = {}
         
@@ -542,7 +558,7 @@ class TestMovaHome(unittest.TestCase):
             mock_filter.assert_called_once()
             mock_gallery.assert_called_once_with(sample_data)
     
-    def test_homepage_with_existing_original_data(self, mock_markdown, mock_columns, mock_logo, mock_set_page_config):
+    def test_homepage_with_existing_original_data(self):
         ''' Tests homepage functionality when original data already set '''
         existing_data = pd.DataFrame({'Year': [2010], 'Culture': ['Greek'], 'Repository': ['MET']})
         session_state_mock = {'original_data': existing_data}
