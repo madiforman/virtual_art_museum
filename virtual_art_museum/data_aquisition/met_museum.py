@@ -39,8 +39,8 @@ import re
 
 import pandas as pd
 
-from .async_utils import filter_objects
-from .common_functions import print_example_rows, century_mapping
+from async_utils import filter_objects
+from common_functions import print_example_rows, century_mapping
 
 
 class MetMuseum:
@@ -63,7 +63,7 @@ class MetMuseum:
         dataframe of met objects.
     """
 
-    def __init__(self, file_path, run_full_pipeline=False, save_name='./data/test_met_objects.csv'):
+    def __init__(self, file_path, run_full_pipeline=False, save_name='../data/test_met_objects.csv'):
         """ Initalizes class with given file path """
         self.df = pd.read_csv(file_path, dtype='str')
         # If has images is false, we need to run request pipeline
@@ -224,9 +224,11 @@ def main():
     """
     Main function to run the pipeline
     """
-    met = MetMuseum('../data/MetObjects_final.csv', run_full_pipeline=True)
-    met.filter_and_save(path='../data/MetObjects_final_filtered_II.csv')
-    print(f"Length of final filtered dataframe: {len(met.df)}")
+    # met = MetMuseum('../data/MetObjects_final.csv', run_full_pipeline=True)
+    # met.filter_and_save(path='../data/MetObjects_final_filtered_II.csv')
+    # print(f"Length of final filtered dataframe: {len(met.df)}")
+    met_test = MetMuseum('../data/MetObjects.txt', run_full_pipeline=True)
+    met_test.filter_and_save(path='../data/MetObjects_test.csv', process_data=True)
 
 if __name__ == "__main__":
     main()
