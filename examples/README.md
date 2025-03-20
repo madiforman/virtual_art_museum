@@ -79,3 +79,8 @@ If you click on this lovely red heart, it will bring you to our Favorites page. 
 ![Figure_12](Screenshots/12.png)
 ![Figure_13](Screenshots/13.png)
 ![Figure_14](Screenshots/14.png)
+
+Downloaded Favorites image would look like that:
+![Figure_14](Screenshots/15.png)
+
+I hope you find it useful!
