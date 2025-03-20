@@ -69,56 +69,56 @@ class MetMuseumTests(unittest.TestCase):
         mock_df['image_url'] = 'https://images.metmuseum.org/CRDImages/ad/original/204788.jpg'
         mock_filter_objects.return_value = mock_df[:self.test_size]  # Return mocked data without bad row
 
-        # Run the test with mocked API
-        self.met = MetMuseum('./data/test_met_objects.csv', run_full_pipeline=True)
+        # # Run the test with mocked API
+        met = MetMuseum('./data/test_met_objects.csv', run_full_pipeline=True)
 
         # Verify the mock was called
         mock_filter_objects.assert_called_once()
 
         # Verify that the bad object was filtered out
-        self.assertEqual(len(self.met.df), self.test_size)
-        self.assertEqual(self.met.df.loc[0, 'image_url'],
+        self.assertEqual(len(met.df), self.test_size)
+        self.assertEqual(met.df.loc[0, 'image_url'],
                         'https://images.metmuseum.org/CRDImages/ad/original/204788.jpg')
 
     def test_split_delimited(self):
         """ Tests the split_delimited method """
-        self.met = MetMuseum('./data/test_met_objects.csv', run_full_pipeline=True)
+        met = MetMuseum('./data/test_met_objects.csv', run_full_pipeline=False)
         test_cell = "value1|value2|value3"
-        result = self.met.split_delimited(test_cell)
+        result = met.split_delimited(test_cell)
         self.assertEqual(result, "value1, value2, value3")
         
     def test_clean_title(self):
         """ Tests the clean_title method """
-        self.met = MetMuseum('./data/test_met_objects.csv', run_full_pipeline=True)
+        met = MetMuseum('./data/test_met_objects.csv', run_full_pipeline=False)
         test_title = "Art piece (test)"
-        result = self.met.clean_title(test_title)
+        result = met.clean_title(test_title)
         self.assertEqual(result, "Art piece")
         
     def test_clean_culture(self):
         """ Tests the clean_culture method """
-        self.met = MetMuseum('./data/test_met_objects.csv', run_full_pipeline=True)
+        met = MetMuseum('./data/test_met_objects.csv', run_full_pipeline=False)
         test_culture = "probably Greek, ancient"
-        result = self.met.clean_culture(test_culture)
+        result = met.clean_culture(test_culture)
         self.assertEqual(result, "Greek")
 
     def test_replace_empty(self):
         """ Tests the replace_empty method """
-        self.met = MetMuseum('./data/test_met_objects.csv', run_full_pipeline=True)
-        self.met.df.loc[0, 'Artist Display Bio'] = ''
-        self.met.replace_empty()
-        self.assertEqual(self.met.df.loc[0, 'Artist Display Bio'], 'Artist Display Bio unknown')
+        met = MetMuseum('./data/test_met_objects.csv', run_full_pipeline=False)
+        met.df.loc[0, 'Artist Display Bio'] = ''
+        met.replace_empty()
+        self.assertEqual(met.df.loc[0, 'Artist Display Bio'], 'Artist Display Bio unknown')
         
     def test_process_data(self):
         """ Tests the process_data method """
-        self.met = MetMuseum('./data/test_met_objects.csv', run_full_pipeline=True)
-        self.assertEqual(self.met.df.loc[0, 'Repository'], 'MET')
-        self.assertEqual(self.met.df.loc[0, 'Year'], 1847)
-        self.assertEqual(self.met.df.loc[0, 'Description'], 'Description unknown')
+        met = MetMuseum('./data/test_met_objects.csv', run_full_pipeline=True)
+        self.assertEqual(met.df.loc[0, 'Repository'], 'MET')
+        self.assertEqual(met.df.loc[0, 'Year'], 1847)
+        self.assertEqual(met.df.loc[0, 'Description'], 'Description unknown')
 
     def test_filter_and_save(self):
         """ Tests the filter_and_save method """
-        self.met = MetMuseum('./data/test_met_objects.csv', run_full_pipeline=True)
-        self.met.filter_and_save('./data/test_met_objects.csv', process_data=False)
+        met = MetMuseum('./data/test_met_objects.csv', run_full_pipeline=False)
+        met.filter_and_save('./data/test_met_objects.csv', process_data=False)
         self.assertTrue(os.path.exists('./data/test_met_objects.csv'))
         
 if __name__ == '__main__':

@@ -39,8 +39,11 @@ import re
 
 import pandas as pd
 
-from async_utils import filter_objects
-from common_functions import print_example_rows, century_mapping
+from data_aquisition.async_utils import filter_objects
+from data_aquisition.common_functions import (
+    print_example_rows,
+    century_mapping
+)
 
 
 class MetMuseum:
@@ -63,7 +66,7 @@ class MetMuseum:
         dataframe of met objects.
     """
 
-    def __init__(self, file_path, run_full_pipeline=False, save_name='../data/test_met_objects.csv'):
+    def __init__(self, file_path, run_full_pipeline=False, save_name='./data/test_met_objects.csv'):
         """ Initalizes class with given file path """
         self.df = pd.read_csv(file_path, dtype='str')
         # If has images is false, we need to run request pipeline
@@ -122,7 +125,7 @@ class MetMuseum:
         """
         if not isinstance(culture, str):
             return "Culture unknown"
-        
+
         cleaned = re.sub(r'\b(?:probably|possibly)\b\s*', '', culture, flags=re.IGNORECASE)
         cleaned = cleaned.split(',')[0].strip()
         return cleaned
@@ -172,9 +175,9 @@ class MetMuseum:
         -------
         pd.DataFrame with relevant columns
         """
-        cols_to_keep = ['Object Number', 'Department', 'Title', 'Culture', 
-                        'Artist Display Name', 'Artist Display Bio', 
-                        'Object Begin Date', 'Medium', 'Repository', 'Tags', 
+        cols_to_keep = ['Object Number', 'Department', 'Title', 'Culture',
+                        'Artist Display Name', 'Artist Display Bio',
+                        'Object Begin Date', 'Medium', 'Repository', 'Tags',
                         'image_url']
 
         self.df = self.df[cols_to_keep]

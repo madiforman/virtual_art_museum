@@ -35,7 +35,7 @@ import pandas as pd
 
 from data_aquisition.async_utils import filter_objects
 from data_aquisition.common_functions import (
-    print_example_rows, 
+    print_example_rows,
     century_mapping
 )
 
@@ -62,7 +62,7 @@ class Europeana:
         """ Initalalizes class with empty dataframe """
         self.df = pd.DataFrame()
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        self.query_path = os.path.join(os.path.dirname(current_dir), 
+        self.query_path = os.path.join(os.path.dirname(current_dir),
                                         'data',
                                         'query_terms.csv')
         self.df = self.create_final(save_final=save_final)
