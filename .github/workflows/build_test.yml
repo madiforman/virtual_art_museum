@@ -108,7 +108,8 @@ jobs:
 
       - name: Lint with pylint
         run: |
-          pylint virtual_art_museum/**/*.py
+          cd virtual_art_museum
+          pylint **/*.py
 
       # Lastly: report code coverage to Coveralls.
       - name: Coveralls GitHub Action
