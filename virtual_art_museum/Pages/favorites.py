@@ -10,7 +10,7 @@ import requests
 import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 
-FAVORITES_CACHE_FILE = "virtual_art_museum/favorites_cache.json"
+FAVORITES_CACHE_FILE = "favorites_cache.json"
 TARGET_WIDTH = 300
 MAX_IMAGES_PER_ROW = 3
 SPACING = 20
