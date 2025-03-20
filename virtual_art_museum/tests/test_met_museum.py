@@ -23,7 +23,7 @@ from unittest.mock import patch
 
 import pandas as pd
 
-from data_aquisition.met_museum import MetMuseum
+from data_aquisition.met_museum import MetMuseum # pylint: disable=import-error
 
 class MetMuseumTests(unittest.TestCase):
     ''' Tests the MetMuseum class '''

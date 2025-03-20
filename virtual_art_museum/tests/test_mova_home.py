@@ -10,13 +10,17 @@ This module contains tests for the MoVA homepage functionality including:
 import unittest
 from unittest.mock import patch
 import os
-import sys
 
 import pandas as pd
 import streamlit as st
 
-# sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from mova_home import load_blended_cached, initialize_session_state, filter_data, reset_filters
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from mova_home import ( # pylint: disable=import-error
+    load_blended_cached,
+    initialize_session_state,
+    filter_data,
+    reset_filters
+)
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
