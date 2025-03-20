@@ -1,8 +1,6 @@
 # Museum of Virtual Art (MoVA)
-![Build/Test Workflow]
-(https://github.com/madiforman/virtual_art_museum/actions/workflows/build_test.yml/badge.svg)
-![Coverage Status]
-(https://coveralls.io/repos/github/madiforman/virtual_art_museum/badge.svg?branch=main)
+![Build/Test Workflow](https://github.com/madiforman/virtual_art_museum/actions/workflows/build_test.yml/badge.svg)
+![Coverage Status](https://coveralls.io/repos/github/madiforman/virtual_art_museum/badge.svg?branch=main)
 ## Project Type: Data Presentation
 
 ## Group Members:
@@ -17,7 +15,7 @@
  
 ## Project Goals: 
 - Create a Streamlit-based web application for a virtual art museum.  
-- Display both basic as historic information about artworks.  
+- Display both basic and historic information about artworks.  
 - Implement search, filter, save, download and pop-up functionalities.    
 
 ## Use Cases: 
