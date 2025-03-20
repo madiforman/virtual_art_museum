@@ -86,7 +86,6 @@ jobs:
         run: |
           conda install --yes coverage
           conda install --yes pylint
-          pip install -r requirements.txt
       - name: make data directory for unit tests
         run: mkdir -p virtual_art_museum/data
       
