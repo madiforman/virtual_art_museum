@@ -42,18 +42,18 @@ conda activate vamenv
 pip install -e .
 cd virtual_art_museum
 ```
-*** 1. Run the app:
+**1. Run the app:
 ```
 streamlit run mova_home.py
 ```
-*** 2. Run Data Acquisition Scripts (please ensure that you have followed the first 5 usage steps)
+**2. Run Data Acquisition Scripts (please ensure that you have followed the first 5 usage steps)
 ```
 cd data_aquisition
 python met_museum.py
 OR
 python europeana.py
 ```
-*** 3. Run Tests
+**3. Run Tests
 ```
 coverage run -m unittest discover
 coverage report -m
