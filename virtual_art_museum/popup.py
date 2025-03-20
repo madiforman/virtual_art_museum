@@ -34,7 +34,7 @@ def display_artwork_popup(artwork):
     # markdown for styling the popup
     if artwork['Repository'] == "MET":
         st.image(artwork['image_url'], use_container_width=True)
-        st.markdown(f"### {artwork['Title'][:50]}")
+        st.markdown(f"### {artwork['Title']}")
         st.markdown(f"**Artist:** {artwork['Artist']}")
         st.markdown(f"**Artist Bio:** {artwork['Artist biographic information']}")
         st.markdown(f"**Century:** {artwork['Century']}")
@@ -44,7 +44,7 @@ def display_artwork_popup(artwork):
 
     elif artwork['Repository'] == 'Europeana':
         st.image(artwork['image_url'], use_container_width=True)
-        st.markdown(f"### {artwork['Title'][:50]}")
+        st.markdown(f"### {artwork['Title']}")
         st.markdown(f"**Artist:** {artwork['Artist']}")
         st.markdown(f"**Culture:** {artwork['Culture']}")
         st.markdown(f"**Description:** {artwork['Description']}")
