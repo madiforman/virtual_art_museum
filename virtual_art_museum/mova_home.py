@@ -204,7 +204,7 @@ def homepage(path1: str, path2: str):
 
     with col2:
         if st.button("❤️"):
-            st.switch_page("pages/favorites.py")
+            st.switch_page("Pages/favorites.py")
 
     with col3:
         reset = st.button('↻', on_click = refresh_data, help = 'Refresh data')
