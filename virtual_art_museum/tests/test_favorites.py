@@ -18,7 +18,7 @@ from PIL import Image
 
 # Import functions from favorites.py
 from Pages.favorites import load_favorites, save_favorites, create_collage, display_favorites, main
-FAVORITES_CACHE_FILE = "favorites_cache.json"
+FAVORITES_CACHE_FILE = "virtual_art_museum/favorites_cache.json"
 
 class TestFavorites(unittest.TestCase):
     """Tests for the favorites module."""
@@ -38,7 +38,7 @@ class TestFavorites(unittest.TestCase):
         mock_context.read.return_value = ''
         mock_file.return_value.__enter__.return_value = mock_context
         
-        # Mock FileNotFoundError
+        # # Mock FileNotFoundError
         mock_file.side_effect = FileNotFoundError
         
         # Call the function
