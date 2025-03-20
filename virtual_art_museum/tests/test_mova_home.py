@@ -10,6 +10,7 @@ This module contains tests for the MoVA homepage functionality including:
 import unittest
 from unittest.mock import patch
 import os
+import sys
 
 import pandas as pd
 import streamlit as st
