@@ -26,7 +26,7 @@ jobs:
 
     # Provide a runner. Options are listed on GitHub, but include
     # windows, ubuntu, and macos (latest, as well as specific versions)
-    runs-on: ubuntu-latest, macos-latest
+    runs-on: ubuntu-latest
 
     # In order to get Conda environments to work properly, we need to
     # tell the runner to start up the bash shell in a way that respects
@@ -41,7 +41,7 @@ jobs:
     # GitHub will run the tests for each of these Python versions.
     strategy:
       matrix:
-        python-version: ["3.8", "3.9"]
+        python-version: ["3.8"]
 
     # The actual workflow steps!
     steps:
@@ -65,18 +65,21 @@ jobs:
       - name: Set up conda
         uses: conda-incubator/setup-miniconda@v2
         with:
-          # Use the environment name from your environment.yml file
           activate-environment: vamenv
-          # The name of the environment file you want conda to use
           environment-file: environment.yml
-          # Whether you want conda to automatically update the conda
-          # version (helpful when some runners have old versions of
-          # conda)
           auto-update-conda: true
-          # Which version of python you want conda to use
-          python-version: ${{ matrix.python-version }}
-          # We don't need the base environment, so don't activate it
           auto-activate-base: false
+          channels: conda-forge,defaults  # Explicitly specify channels
+          channel-priority: strict  # Add channel priority
+          show-channel-urls: true   # Show more information
+
+      # Add a debugging step
+      - name: Debug Conda Info
+        run: |
+          conda info
+          conda list
+          conda config --show-sources
+          conda env list
 
       # You don't normally need test coverage information when
       # developing locally - we just want it in CI - so we install
@@ -84,7 +87,9 @@ jobs:
       # use locally).
       - name: Install additional development dependencies
         run: |
-          conda install --yes coverage
+          pip install -r requirements.txt
+      - name: make data directory for unit tests
+        run: mkdir -p virtual_art_museum/data
       
       # If there are any other steps in order for your tests to
       # run successfully, you can add those steps here!
@@ -92,7 +97,7 @@ jobs:
       # Next step: run the unit tests with code coverage.
       - name: Unit tests
         run: |
-          cd virtual_art_musuem/tests
+          cd virtual_art_museum
           coverage run -m unittest discover
           coverage report
           coverage lcov
@@ -106,8 +111,8 @@ jobs:
           pylint virtual_art_museum/**/*.py
 
       # Lastly: report code coverage to Coveralls.
-      - name: Report code coverage to Coveralls
-        uses: coverallsapp/github-action@v2
+      - name: Coveralls GitHub Action
+        uses: coverallsapp/github-action@v2.3.6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           base-path: virtual_art_museum

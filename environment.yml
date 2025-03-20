@@ -9,6 +9,8 @@ dependencies:
   - aiohttp
   - requests
   - tqdm
+  - pylint=3.2.7
+  - coverage
   # Add any other dependencies your project needs
   - pip
   - pip:

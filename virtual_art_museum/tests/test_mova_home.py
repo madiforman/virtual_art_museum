@@ -16,7 +16,12 @@ import pandas as pd
 import streamlit as st
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from mova_home import load_blended_cached, initialize_session_state, filter_data, reset_filters
+from mova_home import ( # pylint: disable=import-error
+    load_blended_cached,
+    initialize_session_state,
+    filter_data,
+    reset_filters
+)
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 

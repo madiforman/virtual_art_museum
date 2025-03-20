@@ -24,7 +24,7 @@ import warnings
 
 import pandas as pd
 
-from data_aquisition.europeana import Europeana
+from data_aquisition.europeana import Europeana # pylint: disable=import-error
 
 class EuropeanaTests(unittest.TestCase):
     """ Tests the Europeana class """

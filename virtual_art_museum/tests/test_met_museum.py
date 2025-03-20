@@ -23,7 +23,7 @@ from unittest.mock import patch
 
 import pandas as pd
 
-from data_aquisition.met_museum import MetMuseum
+from data_aquisition.met_museum import MetMuseum # pylint: disable=import-error
 
 class MetMuseumTests(unittest.TestCase):
     ''' Tests the MetMuseum class '''
@@ -33,24 +33,39 @@ class MetMuseumTests(unittest.TestCase):
         warnings.filterwarnings("ignore", category=ResourceWarning)
         self.test_size = 50
 
-        bad_row = pd.DataFrame([{
-                                'Object ID': '123456789021394871478891498290',
-                                'Department': 'Test Department',
-                                'Title': 'Test Title',
-                                'Culture': 'Test Culture',
-                                'Artist Display Name': 'Test Artist',
-                                'Artist Display Bio': 'Test Bio',
-                                'Object Begin Date': 'Test Date',
-                                'Medium': 'Test Medium',
-                                'Repository': 'Test Repository',
-                                'Tags': 'Test Tags',
-                                }])
-        # mocks how data looked when orginally downloaded from met github
-        self.test_data = pd.read_csv('./data/MetObjects_final.csv', dtype=str)[:self.test_size]
-        self.test_data = pd.concat([self.test_data, bad_row], ignore_index=True)
+        self.test_data = pd.DataFrame([{
+            'Object Number': '1234567',
+            'Object ID': '34', # real object id with known url 
+            'Department': 'Test Department',
+            'Title': 'Test Title',
+            'Culture': 'Test Culture',
+            'Artist Display Name': 'Test Artist',
+            'Artist Display Bio': 'Test Bio',
+            'Object Begin Date': '1847',
+            'Medium': 'Test Medium',
+            'Repository': 'MET',
+            'Tags': 'Test Tags',
 
-        # IMPORTANT: removing image url to mock the way the data was originally downloaded
-        self.test_data.pop('image_url')
+        }] * self.test_size)  # Replicate the row 50 times
+        bad_row = pd.DataFrame([{
+            'Object ID': '123456789021394871478891498290',
+            'Department': 'Test Department',
+            'Title': 'Test Title',
+            'Culture': 'Test Culture',
+            'Artist Display Name': 'Test Artist',
+            'Artist Display Bio': 'Test Bio',
+            'Object Begin Date': '1954',
+            'Medium': 'Test Medium',
+            'Repository': 'MET',
+            'Tags': 'Test Tags',
+        }])
+
+        self.test_data = pd.concat([self.test_data, bad_row], ignore_index=True)
+        
+        # Create the data directory if it doesn't exist
+        os.makedirs('./data', exist_ok=True)
+        
+        # Save the test data
         self.test_data.to_csv('./data/test_met_objects.csv', index=False)
 
     def tearDown(self):

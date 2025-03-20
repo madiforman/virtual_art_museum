@@ -31,21 +31,21 @@ class TestFavorites(unittest.TestCase):
         ]
 
     @patch('builtins.open')
-    def test_load_favorites_empty(self, mock_file):
+    @patch('os.path.exists')  # Add os.path.exists patch
+    def test_load_favorites_empty(self, mock_exists, mock_file):
         """Test that load_favorites returns an empty list when the cache file is empty"""
-        # Setup mock to simulate empty file
-        mock_context = MagicMock()
-        mock_context.read.return_value = ''
-        mock_file.return_value.__enter__.return_value = mock_context
-        
-        # Mock FileNotFoundError
-        mock_file.side_effect = FileNotFoundError
+        # Set up os.path.exists to return False
+        mock_exists.return_value = False
         
         # Call the function
         favorites = load_favorites()
         
         # Verify results
         self.assertEqual(favorites, [])
+        
+        # Verify that exists was checked and open was never called
+        mock_exists.assert_called_once_with(FAVORITES_CACHE_FILE)
+        mock_file.assert_not_called()
     
     @patch('builtins.open')
     @patch('os.path.exists')

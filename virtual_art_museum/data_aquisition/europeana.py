@@ -33,8 +33,8 @@ from pyeuropeana import utils
 from pyeuropeana import apis
 import pandas as pd
 
-from data_aquisition.async_utils import filter_objects
-from data_aquisition.common_functions import (
+from data_aquisition.async_utils import filter_objects # pylint: disable=import-error
+from data_aquisition.common_functions import ( # pylint: disable=import-error
     print_example_rows,
     century_mapping
 )
