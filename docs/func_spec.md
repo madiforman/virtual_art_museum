@@ -10,11 +10,6 @@ _Metropolitan Museum of Art_ - https://metmuseum.github.io/.
 We will download a bulk file that has everything except the image URLs and prior to building the app, filter out any objects that don't have an image to display. We will process the data to remove unnecessary columns, increase readability and create fields like Century.
     
 _Europeana_ - https://europeana.atlassian.net/wiki/spaces/EF/pages/2385739812/Search+API+Documentation#Query,-Filter,-and-Faceting-Fields. It is a massive dataset that we have to query for general art terms. Structures similarly with columns as titles, creators, etc.
-
-**Use Cases:**
-
-    1. Building a list of desired art
-    2. Learning more about an art piece    
     
 **User Stories:**
 
@@ -40,7 +35,7 @@ _Europeana_ - https://europeana.atlassian.net/wiki/spaces/EF/pages/2385739812/Se
 
 **Use Cases:**
 
-    1. Use Case 1 
+    1. Case 1 
         - Objective of the user: Building a list of desired artworks. 
         The default page will display a collection of images from  
         the MET and Europeana. Users can use the search bar to  
@@ -50,7 +45,7 @@ _Europeana_ - https://europeana.atlassian.net/wiki/spaces/EF/pages/2385739812/Se
             and add them to favorites for easy access  
             - The favorites page will include a download functionality  
             
-    2. Use Case 2
+    2. Case 2
         - Objective of the user: learning more about an art piece  
         - Expected interactions between the user and our system  
             - Users can click on the “more details” button for detailed information  
