@@ -65,18 +65,22 @@ jobs:
       - name: Set up conda
         uses: conda-incubator/setup-miniconda@v2
         with:
-          # Use the environment name from your environment.yml file
           activate-environment: vamenv
-          # The name of the environment file you want conda to use
           environment-file: environment.yml
-          # Whether you want conda to automatically update the conda
-          # version (helpful when some runners have old versions of
-          # conda)
           auto-update-conda: true
-          # Which version of python you want conda to use
           python-version: ${{ matrix.python-version }}
-          # We don't need the base environment, so don't activate it
           auto-activate-base: false
+          channels: conda-forge,defaults  # Explicitly specify channels
+          channel-priority: strict  # Add channel priority
+          show-channel-urls: true   # Show more information
+
+      # Add a debugging step
+      - name: Debug Conda Info
+        run: |
+          conda info
+          conda list
+          conda config --show-sources
+          conda env list
 
       # You don't normally need test coverage information when
       # developing locally - we just want it in CI - so we install
