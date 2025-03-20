@@ -62,7 +62,7 @@ yellow - if this image is already in  your Favorites).
 
 Clicking on the Details button will give you more information about the art piece:
 
-![Figure_6](Screenshots/6.png)
+![Figure_6](Screenshots/16.png)
 
 Additionally, our app allows you to play with different filters to choose the most suitable art:
 
