@@ -25,13 +25,13 @@ from popup import display_artwork_popup
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
-#MET_PATH = os.path.join(base_dir, "data", "MetObjects_final_filtered_processed.csv")
-#EUROPEANA_PATH = os.path.join(base_dir, "data", "Europeana_data_processed.csv")
+MET_PATH = os.path.join(base_dir, "data", "MetObjects_final_filtered_processed.csv")
+EUROPEANA_PATH = os.path.join(base_dir, "data", "Europeana_data_processed.csv")
 BLENDED_PATH = os.path.join(base_dir, "data", "blended_data.csv")
 
 # Caches the result so it doesn't reload every time Streamlit reruns
 @st.cache_data
-def load_blended_cached(path: str, sample_size: int = 10000) -> pd.DataFrame:
+def load_blended_cached(path1:str, path2:str, sample_size: int = 10000) -> pd.DataFrame:
     """
     Loads stratified sample of data with repository proportions assuming 80% MET and 20% Europeana.
 
@@ -54,9 +54,14 @@ def load_blended_cached(path: str, sample_size: int = 10000) -> pd.DataFrame:
         }
         # Sample from each repository
         samples = [
-            pd.read_csv(path).query(f"Repository == '{repo}'").sample(n=count, random_state=42)
-            for repo, count in samples_per_repo.items()
+            pd.read_csv(path1).sample(n=samples_per_repo['MET']),
+            pd.read_csv(path2).sample(n=samples_per_repo['Europeana'])
         ]
+        # samples = [
+        #     pd.read_csv(path).query(f"Repository == '{repo}'").sample(n=count, random_state=42)
+        #     for repo, count in samples_per_repo.items()
+        # ]
+
         # Combine and shuffle
         final_df = pd.concat(samples, ignore_index=True).sample(frac=1, random_state=42)
         #print(f"Loaded {len(final_df)} rows\n{final_df['Repository'].value_counts()}")
@@ -159,7 +164,7 @@ def image_gallery(data):
             st.caption(f"{artwork.Title[:50]}")
             
             # Add to Favorites button
-            if st.button(f"❤️ Add to Favorites", key=f"fav_{idx}", use_container_width=True):
+            if st.button(f"❤️ Favorites", key=f"fav_{idx}", use_container_width=True):
                 # Store the artwork data as a dictionary
                 artwork_dict = {
                     'image_url': artwork.image_url,
@@ -171,7 +176,7 @@ def image_gallery(data):
                 else:
                     st.warning("This artwork is already in your favorites.")
 
-            if st.button(f"View details", key=f"btn_{idx}", use_container_width=True):
+            if st.button(f"Details", key=f"btn_{idx}", use_container_width=True):
                 artwork_dict = data.iloc[idx].to_dict()
                 display_artwork_popup(artwork_dict)
 
@@ -192,7 +197,7 @@ def homepage():
         initial_sidebar_state="collapsed")
 
     if 'original_data' not in st.session_state:
-        st.session_state.original_data = load_blended_cached(BLENDED_PATH).sample(n=100)
+        st.session_state.original_data = load_blended_cached(MET_PATH, EUROPEANA_PATH).sample(n=500)
 
     initialize_session_state(st.session_state.original_data)
 
