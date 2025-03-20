@@ -1,6 +1,6 @@
 # Museum of Virtual Art (MoVA)
-![Build/Test Workflow]
-(https://github.com/madiforman/virtual_art_museum/actions/workflows/build_test.yml/badge.svg)
+[![Build/Test Workflow](https://github.com/madiforman/virtual_art_museum/actions/workflows/build_test.yml/badge.svg)](https://github.com/madiforman/virtual_art_museum/actions/workflows/build_test.yml)
+[![Coverage Status](https://coveralls.io/repos/github/madiforman/virtual_art_museum/badge.svg?branch=main)](https://coveralls.io/github/madiforman/virtual_art_museum?branch=main)
 
 ## Project Type: Data Presentation
 
