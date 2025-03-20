@@ -34,4 +34,27 @@
           available via its Search API   
         - https://europeana.atlassian.net/wiki/spaces/EF/pages/2385739812/Search+API+Documentation#Query,-Filter,-and-Faceting-Fields  
 
-# Setting up Europeana API -> need to add instructions to getting API key
+# Usage: 
+```
+git clone https://github.com/madiforman/virtual_art_museum.git
+conda create -f environment.yml
+conda activate vamenv
+pip install -e .
+cd virtual_art_museum
+```
+*** 1. Run the app:
+```
+streamlit run mova_home.py
+```
+*** 2. Run Data Acquisition Scripts (please ensure that you have followed the first 5 usage steps)
+```
+cd data_aquisition
+python met_museum.py
+OR
+python europeana.py
+```
+*** 3. Run Tests
+```
+coverage run -m unittest discover
+coverage report -m
+```
