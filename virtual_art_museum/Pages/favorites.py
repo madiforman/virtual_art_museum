@@ -17,7 +17,7 @@ SPACING = 20
 CAPTION_HEIGHT = 40
 BACKGROUND_COLOR = (240, 240, 240)
 
-st.set_page_config(page_title="MoVA - Favorites", layout="wide")
+# st.set_page_config(page_title="MoVA - Favorites", layout="wide")
 
 st.markdown(
     """
